@@ -1,0 +1,1785 @@
+<! DOCTYPE html>
+<html>
+<head>
+    <title>Job Management Dashboard - Professional</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; 
+            background:  linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container { max-width: 1800px; margin: 0 auto; }
+        
+        /* LOGIN PAGE */
+        .login-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        . login-box {
+            background:  white;
+            padding:  50px 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            width: 100%;
+            max-width:  420px;
+            text-align: center;
+        }
+        .login-logo {
+            width: 120px;
+            height: 120px;
+            object-fit: contain;
+            margin-bottom: 20px;
+            border-radius: 15px;
+        }
+        .login-logo-placeholder {
+            width: 120px;
+            height: 120px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin:  0 auto 20px;
+            font-size: 50px;
+            color: white;
+        }
+        .login-title {
+            font-size: 28px;
+            font-weight: 800;
+            color:  #1e293b;
+            margin-bottom: 8px;
+        }
+        .login-subtitle {
+            font-size: 14px;
+            color: #64748b;
+            margin-bottom: 30px;
+        }
+        .login-input {
+            width:  100%;
+            padding: 15px 20px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 15px;
+            margin-bottom: 15px;
+            transition: all 0.3s;
+        }
+        .login-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow:  0 0 0 4px rgba(102, 126, 234, 0.15);
+        }
+        .login-btn {
+            width:  100%;
+            padding: 15px;
+            background:  linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color:  white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor:  pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 10px;
+        }
+        .login-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+        .login-btn:disabled { opacity: 0.7; cursor: not-allowed; transform: none; }
+        . login-error {
+            background: #fee2e2;
+            color: #dc2626;
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            font-size: 14px;
+            font-weight: 600;
+            display: none;
+        }
+        
+        /* HEADER */
+        .header {
+            background:  linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            padding: 30px 40px;
+            border-radius: 20px;
+            margin-bottom: 25px;
+            box-shadow: 0 12px 35px rgba(0,0,0,0.25);
+            color: white;
+        }
+        .header-top {
+            display:  flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .header-brand {
+            display: flex;
+            align-items: center;
+            gap:  20px;
+        }
+        .header-logo {
+            width: 60px;
+            height: 60px;
+            object-fit: contain;
+            border-radius: 12px;
+            background: white;
+            padding: 5px;
+        }
+        .header-logo-placeholder {
+            width: 60px;
+            height:  60px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 12px;
+            display:  flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+        }
+        .header h1 { 
+            margin: 0;
+            font-size:  32px;
+            font-weight:  800;
+        }
+        .header-subtitle {
+            font-size: 13px;
+            color: #c7d2e8;
+        }
+        .header-user {
+            display:  flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .user-info { text-align: right; }
+        . user-name { font-weight:  700; font-size: 15px; }
+        .user-role {
+            font-size: 12px;
+            color: #c7d2e8;
+            background: rgba(255,255,255,0.15);
+            padding:  3px 10px;
+            border-radius: 20px;
+            display: inline-block;
+            margin-top: 4px;
+        }
+        .logout-btn {
+            background: rgba(255,255,255,0.15);
+            color:  white;
+            border: 1px solid rgba(255,255,255,0.3);
+            padding: 10px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size:  13px;
+            transition: all 0.3s;
+        }
+        .logout-btn:hover { background: rgba(255,255,255,0.25); }
+        .header-info {
+            display:  flex;
+            gap: 30px;
+            align-items: center;
+            font-size: 13px;
+            color: #e0e7ff;
+            flex-wrap: wrap;
+            padding-top: 15px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+        .header-info strong { color: #fff; font-weight: 700; }
+        
+        /* TOOLBAR */
+        .toolbar {
+            background: white;
+            padding:  20px 25px;
+            border-radius: 15px;
+            margin-bottom: 25px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .search-box {
+            flex: 1;
+            min-width: 250px;
+            position: relative;
+        }
+        .search-input {
+            width:  100%;
+            padding: 12px 20px 12px 45px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 14px;
+        }
+        .search-input:focus { outline: none; border-color: #667eea; }
+        .search-icon {
+            position:  absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size:  18px;
+            color: #94a3b8;
+        }
+        .filter-select {
+            padding: 12px 20px;
+            border: 2px solid #e2e8f0;
+            border-radius:  10px;
+            font-size:  14px;
+            min-width: 150px;
+            cursor: pointer;
+            background: white;
+        }
+        .filter-select:focus { outline: none; border-color: #667eea; }
+        .toolbar-btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 700;
+            cursor:  pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .btn-search { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        .btn-search:hover { transform:  translateY(-2px); box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4); }
+        .btn-clear { background: #e2e8f0; color: #475569; }
+        .btn-clear:hover { background: #cbd5e1; }
+        .btn-report { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; }
+        .btn-report:hover { transform: translateY(-2px); }
+        .btn-users { background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); color: white; }
+        . btn-users:hover { transform: translateY(-2px); }
+        .btn-settings { background: linear-gradient(135deg, #64748b 0%, #475569 100%); color: white; }
+        .btn-settings:hover { transform: translateY(-2px); }
+        . btn {
+            background: linear-gradient(135deg, #00d4ff 0%, #0099ff 100%);
+            color: white;
+            border: none;
+            padding: 12px 28px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 700;
+            transition: all 0.3s;
+            font-size: 13px;
+            text-transform: uppercase;
+        }
+        .btn:hover { transform:  translateY(-3px); box-shadow: 0 10px 30px rgba(0, 157, 255, 0.6); }
+        .btn: disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        
+        /* STATS */
+        .stats-bar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+            text-align: center;
+            transition: all 0.3s;
+        }
+        .stat-card:hover { transform: translateY(-5px); }
+        .stat-icon { font-size: 35px; margin-bottom: 10px; }
+        .stat-value { font-size: 32px; font-weight: 800; color: #1e293b; }
+        .stat-label { font-size: 12px; color: #64748b; text-transform: uppercase; margin-top: 5px; }
+        
+        /* COLUMNS */
+        .columns { 
+            display: grid; 
+            grid-template-columns: 1fr 1fr 1fr 1fr; 
+            gap: 25px;
+            margin-bottom: 25px;
+        }
+        .column { 
+            background: white; 
+            border-radius: 20px; 
+            padding:  25px;
+            box-shadow: 0 12px 35px rgba(0,0,0,0.12);
+            display: flex;
+            flex-direction: column;
+            min-height: 600px;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+        . column:: before {
+            content: '';
+            position: absolute;
+            top:  0;
+            left: 0;
+            right: 0;
+            height: 5px;
+        }
+        .column: nth-child(1) { border-top: 5px solid #ff6b6b; }
+        .column:nth-child(1)::before { background: linear-gradient(90deg, #ff6b6b, #ee5a6f); }
+        .column:nth-child(2) { border-top: 5px solid #4ecdc4; }
+        .column:nth-child(2)::before { background:  linear-gradient(90deg, #4ecdc4, #45b7b0); }
+        .column:nth-child(3) { border-top: 5px solid #45b7d1; }
+        .column:nth-child(3)::before { background: linear-gradient(90deg, #45b7d1, #3a9fbf); }
+        .column:nth-child(4) { border-top: 5px solid #ffa502; }
+        . column:nth-child(4)::before { background: linear-gradient(90deg, #ffa502, #ff8c00); }
+        .column:hover { transform: translateY(-3px); box-shadow: 0 16px 40px rgba(0,0,0,0.15); }
+        .column h2 { 
+            margin: 0 0 20px 0;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f4f8;
+            font-size: 20px;
+            font-weight: 800;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .column:nth-child(1) h2 { color: #ff6b6b; }
+        .column:nth-child(2) h2 { color: #4ecdc4; }
+        .column:nth-child(3) h2 { color: #45b7d1; }
+        .column:nth-child(4) h2 { color: #ffa502; }
+        . jobs-container {
+            flex: 1;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+        .jobs-container::-webkit-scrollbar { width:  6px; }
+        .jobs-container::-webkit-scrollbar-track { background:  #f1f5f9; border-radius: 10px; }
+        .jobs-container::-webkit-scrollbar-thumb { background:  linear-gradient(180deg, #667eea, #764ba2); border-radius: 10px; }
+        
+        /* JOB CARD */
+        .job { 
+            background:  linear-gradient(135deg, #f8fbff 0%, #f0f4f9 100%);
+            padding: 18px;
+            margin:  14px 0;
+            border-radius:  14px;
+            border-left: 5px solid;
+            transition: all 0.3s;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            position: relative;
+        }
+        .column:nth-child(1) .job { border-left-color: #ff6b6b; background: linear-gradient(135deg, #fff5f5, #ffe8e8); }
+        .column:nth-child(2) .job { border-left-color: #4ecdc4; background: linear-gradient(135deg, #f0fffe, #e0fbf8); }
+        .column:nth-child(3) .job { border-left-color: #45b7d1; background: linear-gradient(135deg, #f0f8fb, #e0f2f9); }
+        .column:nth-child(4) .job { border-left-color: #ffa502; background: linear-gradient(135deg, #fffaf0, #ffe8d6); }
+        .job: hover { transform: translateX(5px); box-shadow: 0 8px 20px rgba(0,0,0,0.12); }
+        .job-delete-btn {
+            position: absolute;
+            top:  10px;
+            right: 10px;
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            background:  linear-gradient(135deg, #f5576c, #f093fb);
+            color:  white;
+            border: none;
+            cursor: pointer;
+            font-size:  14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            z-index: 10;
+        }
+        . job-delete-btn:hover { transform: scale(1.1) rotate(90deg); }
+        .job-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 10px;
+            gap: 10px;
+            flex-wrap: wrap;
+            padding-right: 30px;
+        }
+        .job-id { 
+            font-weight: 800; 
+            color:  #1e293b;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            background: rgba(102, 126, 234, 0.12);
+            padding:  6px 10px;
+            border-radius: 6px;
+        }
+        .priority-btn {
+            padding: 6px 12px;
+            border-radius: 6px;
+            border:  2px solid #e2e8f0;
+            font-size: 11px;
+            font-weight: 700;
+            cursor:  pointer;
+            transition: all 0.3s;
+            background: white;
+            color: #64748b;
+            text-transform: uppercase;
+            position: relative;
+        }
+        .priority-btn. priority-high { background:  linear-gradient(135deg, #ff6b6b, #ee5a6f); color: white; border:  none; }
+        . priority-btn.priority-medium { background:  linear-gradient(135deg, #ffa502, #ff8c00); color: white; border:  none; }
+        .priority-btn. priority-low { background: linear-gradient(135deg, #4ecdc4, #45b7b0); color: white; border: none; }
+        .priority-menu {
+            position:  absolute;
+            top: 100%;
+            right: 0;
+            background: white;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 100;
+            min-width: 110px;
+            margin-top: 5px;
+        }
+        .priority-menu button {
+            display: block;
+            width:  100%;
+            padding: 10px;
+            border: none;
+            background: white;
+            color:  #475569;
+            cursor: pointer;
+            font-weight: 700;
+            font-size:  11px;
+            text-transform: uppercase;
+        }
+        .priority-menu button:hover { background: #f0f4f8; }
+        . job-detail { 
+            font-size: 12px; 
+            color: #475569; 
+            margin:  6px 0;
+            line-height: 1.5;
+            display: flex;
+            align-items:  flex-start;
+            gap: 6px;
+        }
+        .job-detail b { color: #1e293b; font-weight: 700; min-width: 75px; }
+        .approval-badge, .finishing-badge {
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 10px;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            margin-top: 10px;
+        }
+        .approval-badge { background: linear-gradient(135deg, #667eea, #764ba2); color: white; }
+        .finishing-badge { background: linear-gradient(135deg, #ffa502, #ff6348); color: white; animation: pulse 2.5s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity:  0.85; } }
+        . notes-section {
+            background: rgba(255, 255, 255, 0.5);
+            border:  2px solid rgba(102, 126, 234, 0.2);
+            border-radius: 10px;
+            padding: 10px;
+            margin-top: 10px;
+        }
+        .notes-label { font-size: 10px; font-weight: 700; color: #64748b; margin-bottom: 6px; text-transform: uppercase; }
+        .notes-display {
+            font-size: 11px;
+            color: #475569;
+            font-style: italic;
+            cursor: pointer;
+            padding: 6px;
+            border-radius: 6px;
+            background: rgba(255,255,255,0.6);
+            min-height: 25px;
+        }
+        .notes-display:hover { background: rgba(102, 126, 234, 0.15); }
+        .notes-input { display: none; width: 100%; padding: 8px; border: 2px solid #667eea; border-radius: 6px; font-size:  11px; min-height: 60px; }
+        .notes-actions { display: none; gap: 6px; margin-top: 6px; }
+        .notes-btn { flex: 1; padding: 6px 10px; border:  none; border-radius: 6px; font-size: 10px; font-weight: 700; cursor: pointer; text-transform: uppercase; }
+        .notes-btn-save { background: linear-gradient(135deg, #00d084, #00a86b); color: white; }
+        .notes-btn-cancel { background: #e2e8f0; color: #475569; }
+        .notes-edit-btn {
+            font-size: 10px;
+            padding: 5px 10px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 700;
+            margin-top: 6px;
+            width: 100%;
+            text-transform: uppercase;
+        }
+        .btn-preview {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            padding: 8px 14px;
+            font-size: 11px;
+            margin-top: 10px;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            border:  none;
+            color: white;
+            cursor: pointer;
+            border-radius: 8px;
+            font-weight: 700;
+            text-decoration: none;
+            text-transform: uppercase;
+        }
+        .btn-preview:hover { transform: translateY(-2px); }
+        .job-actions {
+            display:  flex;
+            gap: 6px;
+            margin-top: 14px;
+            padding-top: 12px;
+            border-top: 1px solid rgba(0,0,0,0.08);
+            flex-wrap: wrap;
+        }
+        .action-btn {
+            flex: 1;
+            min-width: 90px;
+            padding: 9px 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 10px;
+            font-weight: 700;
+            cursor:  pointer;
+            transition: all 0.3s;
+            color: white;
+            text-transform: uppercase;
+        }
+        .btn-approve { background: linear-gradient(135deg, #667eea, #764ba2); }
+        .btn-move, .btn-dispatch { background: linear-gradient(135deg, #00d084, #00a86b); }
+        .action-btn:hover { transform: translateY(-2px); }
+        .action-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        
+        /* MODAL */
+        .modal {
+            display:  none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width:  100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .modal. active { display: flex; }
+        . modal-content {
+            background: white;
+            border-radius: 20px;
+            width: 100%;
+            max-width: 800px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .modal-header {
+            padding: 25px 30px;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top:  0;
+            background: white;
+            border-radius: 20px 20px 0 0;
+        }
+        .modal-title { font-size:  22px; font-weight: 800; color: #1e293b; }
+        .modal-close {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #f1f5f9;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-close:hover { background:  #e2e8f0; transform: rotate(90deg); }
+        .modal-body { padding: 30px; }
+        .report-form {
+            display:  grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom:  30px;
+        }
+        . form-group { display: flex; flex-direction: column; gap: 8px; }
+        . form-label { font-size: 13px; font-weight: 700; color: #475569; }
+        .form-input, .form-select { padding: 12px 15px; border: 2px solid #e2e8f0; border-radius:  10px; font-size: 14px; }
+        .form-input:focus, .form-select:focus { outline: none; border-color: #667eea; }
+        .report-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .report-stat { background: #f8fafc; padding: 20px; border-radius: 12px; text-align: center; }
+        .report-stat-value { font-size:  28px; font-weight: 800; color: #1e293b; }
+        .report-stat-label { font-size: 12px; color: #64748b; margin-top: 5px; }
+        .report-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        .report-table th, . report-table td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #e2e8f0; font-size: 13px; }
+        .report-table th { background: #f8fafc; font-weight: 700; color: #475569; text-transform: uppercase; font-size: 11px; }
+        .report-table tr:hover { background:  #f8fafc; }
+        . users-table { width: 100%; border-collapse:  collapse; }
+        .users-table th, .users-table td { padding: 15px; text-align: left; border-bottom: 1px solid #e2e8f0; }
+        .users-table th { background:  #f8fafc; font-weight:  700; color:  #475569; text-transform: uppercase; font-size: 11px; }
+        .user-status-active { color: #00a86b; font-weight: 700; }
+        . user-status-inactive { color: #dc2626; font-weight: 700; }
+        .user-action-btn { padding: 6px 12px; border: none; border-radius: 6px; font-size: 11px; font-weight: 700; cursor: pointer; margin-right: 5px; }
+        .user-edit-btn { background:  #667eea; color: white; }
+        .user-delete-btn { background:  #f5576c; color:  white; }
+        
+        /* UTILITIES */
+        .loading { text-align: center; color: white; padding: 80px 20px; font-size: 16px; }
+        .spinner { border: 4px solid rgba(255,255,255,0.3); border-top: 4px solid white; border-radius: 50%; width: 50px; height: 50px; animation:  spin 1s linear infinite; margin: 30px auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        . error { background: linear-gradient(135deg, #f5576c, #f093fb); color: white; padding:  20px; border-radius: 15px; margin: 20px 0; font-weight: 600; }
+        . empty { text-align: center; color: #cbd5e1; padding: 50px 20px; font-size: 14px; }
+        .count-badge { background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 800; }
+        . toast { position: fixed; bottom: 25px; right: 25px; padding:  16px 26px; border-radius: 12px; color: white; font-weight: 700; animation: slideIn 0.4s; z-index: 3000; max-width: 350px; font-size: 14px; }
+        .toast-success { background: linear-gradient(135deg, #00d084, #00a86b); }
+        .toast-error { background: linear-gradient(135deg, #f5576c, #f093fb); }
+        .toast-info { background: linear-gradient(135deg, #45b7d1, #2196f3); }
+        @keyframes slideIn { from { transform: translateX(400px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        .footer { background: white; padding: 20px; border-radius: 15px; text-align: center; font-size: 12px; color: #94a3b8; margin-top: 25px; }
+        .status-indicator { display: inline-flex; align-items:  center; gap: 8px; padding: 5px 12px; background: rgba(0, 208, 132, 0.15); color: #00a86b; border-radius: 8px; font-size: 12px; font-weight: 700; }
+        . hidden { display: none ! important; }
+        
+        @media (max-width: 1400px) { .columns { grid-template-columns: 1fr 1fr; } }
+        @media (max-width: 768px) {
+            .columns { grid-template-columns: 1fr; }
+            .header { padding: 20px; }
+            .header h1 { font-size: 22px; }
+            .header-top { flex-direction:  column; align-items: flex-start; }
+            .toolbar { flex-direction:  column; }
+            .search-box { min-width: 100%; }
+            . column { min-height: 400px; }
+        }
+    </style>
+</head>
+<body>    <!-- ========== LOGIN PAGE ========== -->
+    <div id="loginPage" class="login-container">
+        <div class="login-box">
+            <div id="loginLogoContainer">
+                <div class="login-logo-placeholder">🏢</div>
+            </div>
+            <h2 class="login-title" id="loginCompanyName">Job Management System</h2>
+            <p class="login-subtitle">Sign in to access your dashboard</p>
+            <div class="login-error" id="loginError"></div>
+            <input type="email" class="login-input" id="loginEmail" placeholder="Email address" />
+            <input type="password" class="login-input" id="loginPassword" placeholder="Password" />
+            <button class="login-btn" id="loginBtn" onclick="handleLogin()">Sign In</button>
+        </div>
+    </div>
+
+    <!-- ========== MAIN DASHBOARD ========== -->
+    <div id="dashboardPage" class="container hidden">
+        <div class="header">
+            <div class="header-top">
+                <div class="header-brand">
+                    <div id="headerLogoContainer">
+                        <div class="header-logo-placeholder">🏢</div>
+                    </div>
+                    <div>
+                        <h1 id="dashboardTitle">Job Management Dashboard</h1>
+                        <div class="header-subtitle">Professional job workflow management</div>
+                    </div>
+                </div>
+                <div class="header-user">
+                    <div class="user-info">
+                        <div class="user-name" id="userName">User</div>
+                        <div class="user-role" id="userRole">Role</div>
+                    </div>
+                    <button class="logout-btn" onclick="handleLogout()">🚪 Logout</button>
+                </div>
+            </div>
+            <div class="header-info">
+                <span><strong>Last Updated:</strong> <span id="lastUpdate">Loading...</span></span>
+                <span>|</span>
+                <span><strong>Total Jobs:</strong> <span id="totalCount">0</span></span>
+                <button class="btn" id="refreshBtn" onclick="loadData()">🔄 Refresh</button>
+            </div>
+        </div>
+
+        <!-- TOOLBAR -->
+        <div class="toolbar">
+            <div class="search-box">
+                <span class="search-icon">🔍</span>
+                <input type="text" class="search-input" id="searchInput" placeholder="Search jobs by ID, name, client..." onkeypress="if(event.key==='Enter')searchJobs()" />
+            </div>
+            <select class="filter-select" id="filterStatus">
+                <option value="">All Status</option>
+                <option value="waiting">Waiting</option>
+                <option value="printing">Printing</option>
+                <option value="assembly">Assembly</option>
+                <option value="dispatch">Dispatch</option>
+            </select>
+            <select class="filter-select" id="filterPriority">
+                <option value="">All Priority</option>
+                <option value="high">High</option>
+                <option value="medium">Medium</option>
+                <option value="low">Low</option>
+            </select>
+            <button class="toolbar-btn btn-search" onclick="searchJobs()">🔍 Search</button>
+            <button class="toolbar-btn btn-clear" onclick="clearSearch()">✖ Clear</button>
+            <button class="toolbar-btn btn-report" id="reportBtn" onclick="openReportModal()">📊 Reports</button>
+            <button class="toolbar-btn btn-users hidden" id="usersBtn" onclick="openUsersModal()">👥 Users</button>
+            <button class="toolbar-btn btn-settings hidden" id="settingsBtn" onclick="openSettingsModal()">⚙️ Settings</button>
+        </div>
+
+        <!-- STATS BAR -->
+        <div class="stats-bar">
+            <div class="stat-card">
+                <div class="stat-icon">📋</div>
+                <div class="stat-value" id="statWaiting">0</div>
+                <div class="stat-label">Waiting</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🖨️</div>
+                <div class="stat-value" id="statPrinting">0</div>
+                <div class="stat-label">Printing</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🔧</div>
+                <div class="stat-value" id="statAssembly">0</div>
+                <div class="stat-label">Assembly</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📦</div>
+                <div class="stat-value" id="statDispatch">0</div>
+                <div class="stat-label">Dispatch</div>
+            </div>
+        </div>
+
+        <div id="loading" class="loading">
+            <div class="spinner"></div>
+            <p>Loading your job cards...</p>
+        </div>
+
+        <div id="error" class="error" style="display: none;"></div>
+
+        <div id="content" class="columns" style="display: none;">
+            <div class="column">
+                <h2>Waiting <span class="count-badge" id="waitCount">0</span></h2>
+                <div class="jobs-container" id="waiting"></div>
+            </div>
+            <div class="column">
+                <h2>Printing <span class="count-badge" id="printingCount">0</span></h2>
+                <div class="jobs-container" id="printing"></div>
+            </div>
+            <div class="column">
+                <h2>Assembly <span class="count-badge" id="assemblyCount">0</span></h2>
+                <div class="jobs-container" id="assembly"></div>
+            </div>
+            <div class="column">
+                <h2>Ready for Dispatch <span class="count-badge" id="dispatchCount">0</span></h2>
+                <div class="jobs-container" id="dispatch"></div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <span class="status-indicator">System Active</span> | 
+            Auto-refreshes every 30 seconds | 
+            <span id="footerCompanyName">Job Management System</span>
+        </div>
+    </div>
+
+    <!-- ========== REPORT MODAL ========== -->
+    <div class="modal" id="reportModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">📊 Generate Report</h3>
+                <button class="modal-close" onclick="closeModal('reportModal')">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="report-form">
+                    <div class="form-group">
+                        <label class="form-label">Report Type</label>
+                        <select class="form-select" id="reportType">
+                            <option value="daily">Daily Report</option>
+                            <option value="weekly">Weekly Report</option>
+                            <option value="monthly">Monthly Report</option>
+                            <option value="all">All Jobs Report</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">From Date</label>
+                        <input type="date" class="form-input" id="reportDateFrom" />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">To Date</label>
+                        <input type="date" class="form-input" id="reportDateTo" />
+                    </div>
+                    <div class="form-group" style="justify-content: flex-end;">
+                        <button class="toolbar-btn btn-search" onclick="generateReport()" style="margin-top: 24px;">📊 Generate</button>
+                    </div>
+                </div>
+                <div id="reportResults"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== USERS MODAL ========== -->
+    <div class="modal" id="usersModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">👥 User Management</h3>
+                <button class="modal-close" onclick="closeModal('usersModal')">✕</button>
+            </div>
+            <div class="modal-body">
+                <button class="toolbar-btn btn-search" onclick="showAddUserForm()" style="margin-bottom: 20px;">+ Add New User</button>
+                <div id="addUserForm" class="hidden" style="background: #f8fafc; padding: 20px; border-radius: 12px; margin-bottom: 20px;">
+                    <h4 style="margin-bottom:  15px;">Add New User</h4>
+                    <div class="report-form">
+                        <div class="form-group">
+                            <label class="form-label">Name</label>
+                            <input type="text" class="form-input" id="newUserName" />
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-input" id="newUserEmail" />
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Password</label>
+                            <input type="text" class="form-input" id="newUserPassword" />
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Role</label>
+                            <select class="form-select" id="newUserRole">
+                                <option value="Viewer">Viewer</option>
+                                <option value="Operator">Operator</option>
+                                <option value="Manager">Manager</option>
+                                <option value="Admin">Admin</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button class="toolbar-btn btn-search" onclick="addUser()">✅ Add User</button>
+                    <button class="toolbar-btn btn-clear" onclick="hideAddUserForm()">Cancel</button>
+                </div>
+                <div id="usersTableContainer">
+                    <table class="users-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Role</th>
+                                <th>Status</th>
+                                <th>Last Login</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usersTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== SETTINGS MODAL ========== -->
+    <div class="modal" id="settingsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">⚙️ Company Settings</h3>
+                <button class="modal-close" onclick="closeModal('settingsModal')">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="report-form">
+                    <div class="form-group">
+                        <label class="form-label">Company Name</label>
+                        <input type="text" class="form-input" id="settingCompanyName" />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Company Logo URL</label>
+                        <input type="text" class="form-input" id="settingCompanyLogo" placeholder="https://..." />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Primary Color</label>
+                        <input type="color" class="form-input" id="settingPrimaryColor" value="#667eea" style="height: 45px;" />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Secondary Color</label>
+                        <input type="color" class="form-input" id="settingSecondaryColor" value="#764ba2" style="height: 45px;" />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Phone</label>
+                        <input type="text" class="form-input" id="settingPhone" />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-input" id="settingEmail" />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Address</label>
+                        <input type="text" class="form-input" id="settingAddress" />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">GST Number</label>
+                        <input type="text" class="form-input" id="settingGSTNumber" />
+                    </div>
+                </div>
+                <button class="toolbar-btn btn-search" onclick="saveSettings()">💾 Save Settings</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ========== CONFIGURATION ==========
+        var API_URL = 'https://script.google.com/macros/s/AKfycbyuWkVL7PxNUq7Zo-PugEr-cIAHXdXF1J8nOkcRSWO2LVnA8Zk_BuGkWBaRIlxU3yFLQg/exec';
+        
+        // ========== GLOBAL STATE ==========
+        var currentUser = null;
+        var permissions = null;
+        var settings = null;
+        var allJobs = { waiting: [], printing:  [], assembly: [], dispatch: [] };
+
+        // ========== INIT ==========
+        document.addEventListener('DOMContentLoaded', function() {
+            checkSession();
+            setDefaultDates();
+            
+            document.getElementById('loginPassword').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') handleLogin();
+            });
+            document.getElementById('loginEmail').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') document.getElementById('loginPassword').focus();
+            });
+        });
+
+        function setDefaultDates() {
+            var today = new Date().toISOString().split('T')[0];
+            var weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+            document.getElementById('reportDateFrom').value = weekAgo;
+            document.getElementById('reportDateTo').value = today;
+        }
+
+        // ========== SESSION ==========
+        function checkSession() {
+            var savedUser = localStorage.getItem('jobCardUser');
+            if (savedUser) {
+                try {
+                    currentUser = JSON.parse(savedUser);
+                    permissions = JSON.parse(localStorage. getItem('jobCardPermissions'));
+                    var savedSettings = localStorage.getItem('jobCardSettings');
+                    if (savedSettings) settings = JSON.parse(savedSettings);
+                    showDashboard();
+                } catch (e) {
+                    showLogin();
+                }
+            } else {
+                loadSettingsForLogin();
+                showLogin();
+            }
+        }
+
+        async function loadSettingsForLogin() {
+            try {
+                var response = await fetch(API_URL + '?action=getSettings');
+                var data = await response. json();
+                if (data.success && data.settings) {
+                    settings = data.settings;
+                    applyBrandingToLogin();
+                }
+            } catch (e) {
+                console.log('Could not load settings');
+            }
+        }
+
+        function applyBrandingToLogin() {
+            if (! settings) return;
+            if (settings.companyName) {
+                document.getElementById('loginCompanyName').textContent = settings.companyName;
+            }
+            if (settings.companyLogo) {
+                document.getElementById('loginLogoContainer').innerHTML = 
+                    '<img src="' + settings.companyLogo + '" class="login-logo" onerror="this. parentElement.innerHTML=\'<div class=login-logo-placeholder>🏢</div>\'" />';
+            }
+        }
+
+        // ========== LOGIN ==========
+        async function handleLogin() {
+            var email = document.getElementById('loginEmail').value.trim();
+            var password = document.getElementById('loginPassword').value;
+            var errorEl = document.getElementById('loginError');
+            var btn = document.getElementById('loginBtn');
+
+            if (!email || !password) {
+                errorEl.textContent = 'Please enter email and password';
+                errorEl.style.display = 'block';
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = 'Signing in...';
+            errorEl.style.display = 'none';
+
+            try {
+                var response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'login', email: email, password: password })
+                });
+                var result = await response.json();
+
+                if (result. success) {
+                    currentUser = result.user;
+                    permissions = result. permissions;
+                    settings = result.settings;
+                    localStorage. setItem('jobCardUser', JSON.stringify(currentUser));
+                    localStorage.setItem('jobCardPermissions', JSON.stringify(permissions));
+                    localStorage.setItem('jobCardSettings', JSON.stringify(settings));
+                    showToast('✅ Welcome, ' + currentUser. name + '!', 'success');
+                    showDashboard();
+                } else {
+                    errorEl.textContent = result.message || 'Login failed';
+                    errorEl.style. display = 'block';
+                }
+            } catch (error) {
+                errorEl.textContent = 'Connection error. Please try again.';
+                errorEl.style.display = 'block';
+            }
+            btn.disabled = false;
+            btn.textContent = 'Sign In';
+        }
+
+        function handleLogout() {
+            if (! confirm('Are you sure you want to logout?')) return;
+            localStorage.removeItem('jobCardUser');
+            localStorage.removeItem('jobCardPermissions');
+            localStorage.removeItem('jobCardSettings');
+            currentUser = null;
+            permissions = null;
+            showLogin();
+            showToast('👋 Logged out successfully', 'info');
+        }
+
+        function showLogin() {
+            document. getElementById('loginPage').classList.remove('hidden');
+            document.getElementById('dashboardPage').classList.add('hidden');
+            document.getElementById('loginEmail').value = '';
+            document.getElementById('loginPassword').value = '';
+            document. getElementById('loginError').style.display = 'none';
+        }
+
+        function showDashboard() {
+            document.getElementById('loginPage').classList.add('hidden');
+            document.getElementById('dashboardPage').classList.remove('hidden');
+            applyBranding();
+            applyPermissions();
+            loadData();
+            setInterval(loadData, 30000);
+        }
+
+        // ========== BRANDING ==========
+        function applyBranding() {
+            if (!settings) return;
+            if (settings.companyName) {
+                document.getElementById('dashboardTitle').textContent = settings.companyName + ' Dashboard';
+                document.getElementById('footerCompanyName').textContent = settings. companyName;
+                document.title = settings.companyName + ' - Job Management';
+            }
+            if (settings.companyLogo) {
+                document.getElementById('headerLogoContainer').innerHTML = 
+                    '<img src="' + settings.companyLogo + '" class="header-logo" onerror="this.parentElement.innerHTML=\'<div class=header-logo-placeholder>🏢</div>\'" />';
+            }
+            if (currentUser) {
+                document.getElementById('userName').textContent = currentUser.name;
+                document.getElementById('userRole').textContent = currentUser.role;
+            }
+        }
+
+        function applyPermissions() {
+            if (! permissions) return;
+            if (permissions.canManageUsers) document.getElementById('usersBtn').classList.remove('hidden');
+            if (permissions.canEditSettings) document.getElementById('settingsBtn').classList.remove('hidden');
+            if (! permissions.canViewReports) document.getElementById('reportBtn').classList.add('hidden');
+        }
+
+        // ========== LOAD DATA ==========
+        async function loadData() {
+            try {
+                var btn = document.getElementById('refreshBtn');
+                btn.disabled = true;
+                document.getElementById('loading').style.display = 'block';
+                document.getElementById('content').style.display = 'none';
+                document.getElementById('error').style.display = 'none';
+
+                var response = await fetch(API_URL);
+                var data = await response.json();
+                if (data.error) throw new Error(data. error);
+
+                allJobs = {
+                    waiting:  data.waiting || [],
+                    printing: data.printing || [],
+                    assembly: data.assembly || [],
+                    dispatch: data.dispatch || []
+                };
+
+                if (data.settings) {
+                    settings = data.settings;
+                    localStorage.setItem('jobCardSettings', JSON. stringify(settings));
+                }
+
+                renderDashboard(allJobs);
+                updateStats(allJobs);
+                updateTime();
+
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('content').style.display = 'grid';
+                btn.disabled = false;
+            } catch (error) {
+                console. error('Error:', error);
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('error').style.display = 'block';
+                document.getElementById('error').textContent = '❌ Error:  ' + error.message;
+                document.getElementById('refreshBtn').disabled = false;
+            }
+        }
+
+        function updateStats(jobs) {
+            document.getElementById('statWaiting').textContent = jobs.waiting.length;
+            document.getElementById('statPrinting').textContent = jobs.printing.length;
+            document.getElementById('statAssembly').textContent = jobs.assembly.length;
+            document.getElementById('statDispatch').textContent = jobs.dispatch. length;
+        }
+
+        // ========== SEARCH & FILTER ==========
+        function searchJobs() {
+            var searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
+            var statusFilter = document.getElementById('filterStatus').value;
+            var priorityFilter = document.getElementById('filterPriority').value;
+
+            if (!searchTerm && !statusFilter && ! priorityFilter) {
+                renderDashboard(allJobs);
+                return;
+            }
+
+            var filteredJobs = {
+                waiting: filterArray(allJobs. waiting, searchTerm, priorityFilter),
+                printing: filterArray(allJobs.printing, searchTerm, priorityFilter),
+                assembly: filterArray(allJobs. assembly, searchTerm, priorityFilter),
+                dispatch: filterArray(allJobs.dispatch, searchTerm, priorityFilter)
+            };
+
+            if (statusFilter) {
+                if (statusFilter !== 'waiting') filteredJobs.waiting = [];
+                if (statusFilter !== 'printing') filteredJobs.printing = [];
+                if (statusFilter !== 'assembly') filteredJobs. assembly = [];
+                if (statusFilter !== 'dispatch') filteredJobs.dispatch = [];
+            }
+
+            renderDashboard(filteredJobs);
+            var total = filteredJobs.waiting.length + filteredJobs.printing. length + filteredJobs.assembly.length + filteredJobs.dispatch.length;
+            showToast('🔍 Found ' + total + ' job(s)', 'info');
+        }
+
+        function filterArray(jobs, searchTerm, priorityFilter) {
+            return jobs.filter(function(job) {
+                var matchSearch = ! searchTerm || 
+                    (job.id || '').toLowerCase().includes(searchTerm) ||
+                    (job.name || '').toLowerCase().includes(searchTerm) ||
+                    (job.client || '').toLowerCase().includes(searchTerm) ||
+                    (job.size || '').toLowerCase().includes(searchTerm) ||
+                    (job.materials || '').toLowerCase().includes(searchTerm);
+                var matchPriority = !priorityFilter || (job.priority || '').toLowerCase() === priorityFilter;
+                return matchSearch && matchPriority;
+            });
+        }
+
+        function clearSearch() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('filterStatus').value = '';
+            document.getElementById('filterPriority').value = '';
+            renderDashboard(allJobs);
+            showToast('✓ Filters cleared', 'info');
+        }
+
+        // ========== RENDER DASHBOARD ==========
+        function renderDashboard(data) {
+            var waiting = data.waiting || [];
+            var printing = data.printing || [];
+            var assembly = data.assembly || [];
+            var dispatch = data.dispatch || [];
+
+            document.getElementById('waitCount').textContent = waiting.length;
+            document.getElementById('printingCount').textContent = printing.length;
+            document.getElementById('assemblyCount').textContent = assembly.length;
+            document. getElementById('dispatchCount').textContent = dispatch.length;
+            document.getElementById('totalCount').textContent = waiting.length + printing.length + assembly.length + dispatch. length;
+
+            var canMove = permissions ?  permissions.canMoveJobs : true;
+            var canDelete = permissions ? permissions. canDeleteJobs :  true;
+
+            document.getElementById('waiting').innerHTML = waiting.length ?  
+                waiting.map(function(j) { return jobTemplate(j, 'Approve', 'approveJob', canMove, canDelete); }).join('') : 
+                '<div class="empty">No jobs waiting</div>';
+            
+            document.getElementById('printing').innerHTML = printing.length ? 
+                printing.map(function(j) { return jobTemplate(j, 'Send to Assembly', 'sendToAssembly', canMove, canDelete); }).join('') : 
+                '<div class="empty">No jobs printing</div>';
+            
+            document.getElementById('assembly').innerHTML = assembly. length ? 
+                assembly.map(function(j) { return jobTemplate(j, 'Send to Ready', 'sendToReady', canMove, canDelete); }).join('') : 
+                '<div class="empty">No jobs in assembly</div>';
+            
+            document. getElementById('dispatch').innerHTML = dispatch.length ?  
+                dispatch. map(function(j) { return jobTemplate(j, 'Archive', 'archiveJob', canMove, canDelete); }).join('') : 
+                '<div class="empty">No jobs ready</div>';
+        }
+
+        function getPriorityClass(priority) {
+            if (! priority) return '';
+            var p = priority.toLowerCase();
+            if (p === 'high') return 'priority-high';
+            if (p === 'medium') return 'priority-medium';
+            if (p === 'low') return 'priority-low';
+            return '';
+        }
+
+        function jobTemplate(job, buttonText, buttonAction, canMove, canDelete) {
+            var deleteBtn = canDelete ? 
+                '<button class="job-delete-btn" onclick="deleteJob(\'' + job.id + '\')" title="Delete">🗑️</button>' : '';
+            
+            var actionBtn = (canMove && buttonText) ? 
+                '<button class="action-btn btn-approve" onclick="' + buttonAction + '(\'' + job. id + '\')">' + buttonText + '</button>' : 
+                '<button class="action-btn btn-approve" disabled>' + buttonText + '</button>';
+
+            var notesText = (job.notes || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+
+            return '<div class="job">' +
+                deleteBtn +
+                '<div class="job-header">' +
+                    '<div class="job-id">ID: ' + job.id + '</div>' +
+                    '<button class="priority-btn ' + getPriorityClass(job.priority) + '" onclick="showPriorityMenu(event, \'' + job.id + '\')">' +
+                        (job.priority || 'Priority') +
+                    '</button>' +
+                '</div>' +
+                '<div class="job-detail"><b>Job:</b> ' + (job.name || '') + '</div>' +
+                '<div class="job-detail"><b>Client:</b> ' + (job.client || '') + '</div>' +
+                '<div class="job-detail"><b>Size: </b> ' + (job.size || '') + '</div>' +
+                '<div class="job-detail"><b>Qty:</b> ' + (job.quantity || '') + '</div>' +
+                '<div class="job-detail"><b>Materials:</b> ' + (job.materials || '') + '</div>' +
+                (job.approvalBy ? '<div class="approval-badge">👤 ' + job.approvalBy + '</div>' : '') +
+                (job.finishing ? '<div class="finishing-badge">✨ ' + job.finishing + '</div>' : '') +
+                (job.files ? '<a href="' + job.files + '" target="_blank" class="btn-preview">📄 View File</a>' : '') +
+                '<div class="notes-section" data-notes-id="' + job. id + '">' +
+                    '<div class="notes-label">Notes</div>' +
+                    '<div class="notes-display" onclick="editNotes(\'' + job.id + '\', \'' + notesText + '\')">' + (job.notes || 'Click to add notes') + '</div>' +
+                    '<textarea class="notes-input" placeholder="Add notes... "></textarea>' +
+                    '<div class="notes-actions">' +
+                        '<button class="notes-btn notes-btn-save" onclick="saveNotes(\'' + job.id + '\')">Save</button>' +
+                        '<button class="notes-btn notes-btn-cancel" onclick="cancelNotes(\'' + job. id + '\')">Cancel</button>' +
+                    '</div>' +
+                    '<button class="notes-edit-btn" onclick="editNotes(\'' + job.id + '\', \'' + notesText + '\')">Edit Notes</button>' +
+                '</div>' +
+                '<div class="job-actions">' + actionBtn + '</div>' +
+            '</div>';
+        }        // ========== PRIORITY ==========
+        function showPriorityMenu(event, jobId) {
+            event.stopPropagation();
+            var existingMenu = document. querySelector('. priority-menu');
+            if (existingMenu) existingMenu.remove();
+            
+            var btn = event.target. closest('.priority-btn');
+            var menu = document.createElement('div');
+            menu.className = 'priority-menu';
+            menu.innerHTML = 
+                '<button onclick="setPriority(\'' + jobId + '\', \'High\')">🔴 High</button>' +
+                '<button onclick="setPriority(\'' + jobId + '\', \'Medium\')">🟡 Medium</button>' +
+                '<button onclick="setPriority(\'' + jobId + '\', \'Low\')">🟢 Low</button>';
+            
+            btn. parentElement.style.position = 'relative';
+            btn.parentElement.appendChild(menu);
+            
+            setTimeout(function() {
+                document.addEventListener('click', function closeMenu(e) {
+                    var menuEl = document.querySelector('.priority-menu');
+                    if (menuEl) menuEl.remove();
+                    document.removeEventListener('click', closeMenu);
+                });
+            }, 10);
+        }
+
+        async function setPriority(jobId, priority) {
+            try {
+                showToast('Setting priority... ', 'info');
+                var response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'setPriority', jobId:  jobId, priority:  priority })
+                });
+                var result = await response. json();
+                if (result.success) {
+                    showToast('✅ Priority set to ' + priority, 'success');
+                    setTimeout(loadData, 500);
+                } else {
+                    showToast('❌ ' + result.message, 'error');
+                }
+            } catch (error) {
+                showToast('❌ Error:  ' + error.message, 'error');
+            }
+        }
+
+        // ========== NOTES ==========
+        function editNotes(jobId, currentNotes) {
+            var noteElement = document.querySelector('[data-notes-id="' + jobId + '"]');
+            if (! noteElement) return;
+            noteElement.querySelector('.notes-display').style.display = 'none';
+            noteElement.querySelector('.notes-edit-btn').style.display = 'none';
+            noteElement.querySelector('.notes-input').style.display = 'block';
+            noteElement.querySelector('.notes-actions').style.display = 'flex';
+            noteElement.querySelector('.notes-input').value = currentNotes || '';
+            noteElement.querySelector('. notes-input').focus();
+        }
+
+        function cancelNotes(jobId) {
+            var noteElement = document. querySelector('[data-notes-id="' + jobId + '"]');
+            if (!noteElement) return;
+            noteElement. querySelector('.notes-display').style.display = 'block';
+            noteElement.querySelector('.notes-edit-btn').style.display = 'block';
+            noteElement. querySelector('.notes-input').style.display = 'none';
+            noteElement.querySelector('.notes-actions').style.display = 'none';
+        }
+
+        async function saveNotes(jobId) {
+            var noteElement = document.querySelector('[data-notes-id="' + jobId + '"]');
+            var notes = noteElement.querySelector('.notes-input').value;
+            try {
+                showToast('Saving notes...', 'info');
+                var response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'saveNotes', jobId: jobId, notes: notes })
+                });
+                var result = await response.json();
+                if (result.success) {
+                    noteElement.querySelector('.notes-display').textContent = notes || 'Click to add notes';
+                    cancelNotes(jobId);
+                    showToast('✅ Notes saved! ', 'success');
+                } else {
+                    showToast('❌ ' + result.message, 'error');
+                }
+            } catch (error) {
+                showToast('❌ Error: ' + error.message, 'error');
+            }
+        }
+
+        // ========== JOB ACTIONS ==========
+        async function approveJob(jobId) {
+            if (!permissions || !permissions.canMoveJobs) {
+                showToast('❌ You do not have permission', 'error');
+                return;
+            }
+            try {
+                showToast('Approving job...', 'info');
+                var response = await fetch(API_URL, {
+                    method:  'POST',
+                    body: JSON.stringify({ action: 'approve', jobId: jobId })
+                });
+                var result = await response.json();
+                if (result.success) {
+                    showToast('✅ Job approved!', 'success');
+                    setTimeout(loadData, 800);
+                } else {
+                    showToast('❌ ' + result. message, 'error');
+                }
+            } catch (error) {
+                showToast('❌ Error: ' + error.message, 'error');
+            }
+        }
+
+        async function sendToAssembly(jobId) {
+            if (! permissions || !permissions. canMoveJobs) {
+                showToast('❌ You do not have permission', 'error');
+                return;
+            }
+            try {
+                showToast('Sending to assembly...', 'info');
+                var response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON. stringify({ action: 'sendToAssembly', jobId:  jobId })
+                });
+                var result = await response.json();
+                if (result.success) {
+                    showToast('✅ Sent to assembly!', 'success');
+                    setTimeout(loadData, 800);
+                } else {
+                    showToast('❌ ' + result. message, 'error');
+                }
+            } catch (error) {
+                showToast('❌ Error: ' + error.message, 'error');
+            }
+        }
+
+        async function sendToReady(jobId) {
+            if (!permissions || !permissions.canMoveJobs) {
+                showToast('❌ You do not have permission', 'error');
+                return;
+            }
+            try {
+                showToast('Sending to dispatch...', 'info');
+                var response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON. stringify({ action: 'sendToReady', jobId: jobId })
+                });
+                var result = await response.json();
+                if (result.success) {
+                    showToast('✅ Sent to dispatch!', 'success');
+                    setTimeout(loadData, 800);
+                } else {
+                    showToast('❌ ' + result.message, 'error');
+                }
+            } catch (error) {
+                showToast('❌ Error: ' + error.message, 'error');
+            }
+        }
+
+        async function archiveJob(jobId) {
+            if (!permissions || !permissions.canArchive) {
+                showToast('❌ You do not have permission', 'error');
+                return;
+            }
+            if (! confirm('Archive this job?')) return;
+            try {
+                showToast('Archiving... ', 'info');
+                var response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'archiveJob', jobId: jobId })
+                });
+                var result = await response.json();
+                if (result.success) {
+                    showToast('✅ Job archived! ', 'success');
+                    setTimeout(loadData, 800);
+                } else {
+                    showToast('❌ ' + result. message, 'error');
+                }
+            } catch (error) {
+                showToast('❌ Error: ' + error.message, 'error');
+            }
+        }
+
+        async function deleteJob(jobId) {
+            if (!permissions || !permissions.canDeleteJobs) {
+                showToast('❌ You do not have permission to delete', 'error');
+                return;
+            }
+            if (! confirm('Are you sure you want to DELETE this job?\n\nThis cannot be undone! ')) return;
+            try {
+                showToast('Deleting... ', 'info');
+                var response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'deleteJob', jobId: jobId })
+                });
+                var result = await response. json();
+                if (result.success) {
+                    showToast('✅ Job deleted!', 'success');
+                    setTimeout(loadData, 800);
+                } else {
+                    showToast('❌ ' + result.message, 'error');
+                }
+            } catch (error) {
+                showToast('❌ Error: ' + error.message, 'error');
+            }
+        }
+
+        // ========== MODALS ==========
+        function openReportModal() {
+            document.getElementById('reportModal').classList.add('active');
+            document.getElementById('reportResults').innerHTML = '';
+        }
+
+        function openUsersModal() {
+            document.getElementById('usersModal').classList.add('active');
+            loadUsers();
+        }
+
+        function openSettingsModal() {
+            document.getElementById('settingsModal').classList.add('active');
+            if (settings) {
+                document.getElementById('settingCompanyName').value = settings.companyName || '';
+                document. getElementById('settingCompanyLogo').value = settings.companyLogo || '';
+                document.getElementById('settingPrimaryColor').value = settings.primaryColor || '#667eea';
+                document.getElementById('settingSecondaryColor').value = settings.secondaryColor || '#764ba2';
+                document.getElementById('settingPhone').value = settings.phone || '';
+                document.getElementById('settingEmail').value = settings.email || '';
+                document.getElementById('settingAddress').value = settings.address || '';
+                document.getElementById('settingGSTNumber').value = settings.gstNumber || '';
+            }
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        // ========== REPORTS ==========
+        async function generateReport() {
+            var reportType = document. getElementById('reportType').value;
+            var dateFrom = document.getElementById('reportDateFrom').value;
+            var dateTo = document.getElementById('reportDateTo').value;
+
+            showToast('📊 Generating report...', 'info');
+
+            try {
+                var url = API_URL + '? action=report&type=' + reportType + '&dateFrom=' + dateFrom + '&dateTo=' + dateTo;
+                var response = await fetch(url);
+                var data = await response.json();
+
+                if (data. success && data.report) {
+                    renderReport(data.report);
+                    showToast('✅ Report generated! ', 'success');
+                } else {
+                    showToast('❌ Failed to generate report', 'error');
+                }
+            } catch (error) {
+                showToast('❌ Error:  ' + error.message, 'error');
+            }
+        }
+
+        function renderReport(report) {
+            var html = '<div class="report-summary">' +
+                '<div class="report-stat"><div class="report-stat-value">' + report. summary.totalJobs + '</div><div class="report-stat-label">Total Jobs</div></div>' +
+                '<div class="report-stat"><div class="report-stat-value">' + report. summary.waiting + '</div><div class="report-stat-label">Waiting</div></div>' +
+                '<div class="report-stat"><div class="report-stat-value">' + report.summary.printing + '</div><div class="report-stat-label">Printing</div></div>' +
+                '<div class="report-stat"><div class="report-stat-value">' + report.summary.assembly + '</div><div class="report-stat-label">Assembly</div></div>' +
+                '<div class="report-stat"><div class="report-stat-value">' + report.summary. dispatch + '</div><div class="report-stat-label">Dispatch</div></div>' +
+                '<div class="report-stat"><div class="report-stat-value">' + report. summary.urgentJobs + '</div><div class="report-stat-label">Urgent</div></div>' +
+                '</div>';
+
+            html += '<h4 style="margin:  20px 0 10px;">📋 Jobs List (' + report.jobs.length + ')</h4>';
+            
+            if (report. jobs.length > 0) {
+                html += '<table class="report-table"><thead><tr>' +
+                    '<th>Job ID</th><th>Name</th><th>Client</th><th>Status</th><th>Priority</th>' +
+                    '</tr></thead><tbody>';
+                
+                report.jobs.forEach(function(job) {
+                    html += '<tr>' +
+                        '<td>' + job.id + '</td>' +
+                        '<td>' + (job.name || '') + '</td>' +
+                        '<td>' + (job. client || '') + '</td>' +
+                        '<td>' + (job.status || '') + '</td>' +
+                        '<td>' + (job.priority || '-') + '</td>' +
+                        '</tr>';
+                });
+                html += '</tbody></table>';
+            } else {
+                html += '<div class="empty">No jobs found for this period</div>';
+            }
+
+            html += '<div style="margin-top:  20px; text-align: right;">' +
+                '<button class="toolbar-btn btn-report" onclick="printReport()">🖨️ Print Report</button>' +
+                '</div>';
+
+            document.getElementById('reportResults').innerHTML = html;
+        }
+
+        function printReport() {
+            var content = document.getElementById('reportResults').innerHTML;
+            var win = window.open('', '_blank');
+            win. document.write('<html><head><title>Report</title>');
+            win.document.write('<style>body{font-family: Arial,sans-serif;padding:20px}table{width:100%;border-collapse:collapse}th,td{padding:10px;border:1px solid #ddd;text-align:left}th{background:#f5f5f5}. report-summary{display:flex;gap: 20px;flex-wrap:wrap;margin-bottom:20px}. report-stat{background:#f8f8f8;padding: 15px 25px;border-radius:8px;text-align:center}. report-stat-value{font-size:24px;font-weight:bold}. report-stat-label{font-size:12px;color:#666}</style>');
+            win.document.write('</head><body>');
+            win.document.write('<h1>Job Report</h1>');
+            win.document.write('<p>Generated: ' + new Date().toLocaleString() + '</p>');
+            win.document.write(content);
+            win.document.write('</body></html>');
+            win.document.close();
+            win.print();
+        }
+
+        // ========== USERS MANAGEMENT ==========
+        async function loadUsers() {
+            try {
+                var response = await fetch(API_URL + '?action=getUsers');
+                var data = await response.json();
+                if (data.success && data.users) {
+                    renderUsersTable(data. users);
+                }
+            } catch (error) {
+                console.error('Error loading users:', error);
+            }
+        }
+
+        function renderUsersTable(users) {
+            var html = '';
+            users.forEach(function(user) {
+                var statusClass = user.status === 'Active' ? 'user-status-active' : 'user-status-inactive';
+                html += '<tr>' +
+                    '<td>' + user.id + '</td>' +
+                    '<td>' + user.name + '</td>' +
+                    '<td>' + user.email + '</td>' +
+                    '<td>' + user.role + '</td>' +
+                    '<td class="' + statusClass + '">' + user.status + '</td>' +
+                    '<td>' + (user.lastLogin || '-') + '</td>' +
+                    '<td>' +
+                        '<button class="user-action-btn user-edit-btn" onclick="toggleUserStatus(\'' + user. id + '\', \'' + user.status + '\')">Toggle</button>' +
+                        '<button class="user-action-btn user-delete-btn" onclick="deleteUser(\'' + user.id + '\')">Delete</button>' +
+                    '</td>' +
+                    '</tr>';
+            });
+            document.getElementById('usersTableBody').innerHTML = html || '<tr><td colspan="7" style="text-align: center">No users found</td></tr>';
+        }
+
+        function showAddUserForm() {
+            document.getElementById('addUserForm').classList.remove('hidden');
+        }
+
+        function hideAddUserForm() {
+            document.getElementById('addUserForm').classList.add('hidden');
+            document.getElementById('newUserName').value = '';
+            document.getElementById('newUserEmail').value = '';
+            document.getElementById('newUserPassword').value = '';
+            document.getElementById('newUserRole').value = 'Viewer';
+        }
+
+        async function addUser() {
+            var name = document. getElementById('newUserName').value.trim();
+            var email = document.getElementById('newUserEmail').value.trim();
+            var password = document.getElementById('newUserPassword').value;
+            var role = document.getElementById('newUserRole').value;
+
+            if (!name || !email || !password) {
+                showToast('❌ Please fill all fields', 'error');
+                return;
+            }
+
+            try {
+                showToast('Adding user...', 'info');
+                var response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        action:  'addUser',
+                        name:  name,
+                        email: email,
+                        password: password,
+                        role: role
+                    })
+                });
+                var result = await response.json();
+                if (result. success) {
+                    showToast('✅ User added! ', 'success');
+                    hideAddUserForm();
+                    loadUsers();
+                } else {
+                    showToast('❌ ' + result.message, 'error');
+                }
+            } catch (error) {
+                showToast('❌ Error: ' + error. message, 'error');
+            }
+        }
+
+        async function toggleUserStatus(userId, currentStatus) {
+            var newStatus = currentStatus === 'Active' ?  'Inactive' : 'Active';
+            try {
+                showToast('Updating user... ', 'info');
+                var response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        action: 'updateUser',
+                        userId: userId,
+                        status: newStatus
+                    })
+                });
+                var result = await response. json();
+                if (result.success) {
+                    showToast('✅ User status updated! ', 'success');
+                    loadUsers();
+                } else {
+                    showToast('❌ ' + result. message, 'error');
+                }
+            } catch (error) {
+                showToast('❌ Error: ' + error.message, 'error');
+            }
+        }
+
+        async function deleteUser(userId) {
+            if (!confirm('Delete this user? ')) return;
+            try {
+                showToast('Deleting user...', 'info');
+                var response = await fetch(API_URL, {
+                    method: 'POST',
+                    body:  JSON.stringify({ action: 'deleteUser', userId: userId })
+                });
+                var result = await response.json();
+                if (result. success) {
+                    showToast('✅ User deleted!', 'success');
+                    loadUsers();
+                } else {
+                    showToast('❌ ' + result.message, 'error');
+                }
+            } catch (error) {
+                showToast('❌ Error: ' + error.message, 'error');
+            }
+        }
+
+        // ========== SETTINGS ==========
+        async function saveSettings() {
+            var newSettings = {
+                action: 'saveSettings',
+                companyName: document.getElementById('settingCompanyName').value,
+                companyLogo: document.getElementById('settingCompanyLogo').value,
+                primaryColor: document.getElementById('settingPrimaryColor').value,
+                secondaryColor:  document.getElementById('settingSecondaryColor').value,
+                phone: document.getElementById('settingPhone').value,
+                email: document.getElementById('settingEmail').value,
+                address:  document.getElementById('settingAddress').value,
+                gstNumber: document.getElementById('settingGSTNumber').value
+            };
+
+            try {
+                showToast('Saving settings...', 'info');
+                var response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON. stringify(newSettings)
+                });
+                var result = await response.json();
+                if (result.success) {
+                    settings = newSettings;
+                    localStorage.setItem('jobCardSettings', JSON.stringify(settings));
+                    applyBranding();
+                    showToast('✅ Settings saved!', 'success');
+                    closeModal('settingsModal');
+                } else {
+                    showToast('❌ ' + result.message, 'error');
+                }
+            } catch (error) {
+                showToast('❌ Error:  ' + error.message, 'error');
+            }
+        }
+
+        // ========== UTILITIES ==========
+        function showToast(message, type) {
+            var existingToast = document.querySelector('.toast');
+            if (existingToast) existingToast.remove();
+            
+            var toast = document. createElement('div');
+            toast.className = 'toast toast-' + type;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(function() { toast.remove(); }, 3500);
+        }
+
+        function updateTime() {
+            var now = new Date();
+            document.getElementById('lastUpdate').textContent = now.toLocaleTimeString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+        }
+
+        // Close modals on outside click
+        document. addEventListener('click', function(e) {
+            if (e. target.classList.contains('modal')) {
+                e.target.classList. remove('active');
+            }
+        });
+
+        // Escape key to close modals
+        document.addEventListener('keydown', function(e) {
+            if (e. key === 'Escape') {
+                document.querySelectorAll('.modal. active').forEach(function(modal) {
+                    modal.classList.remove('active');
+                });
+            }
+        });
+    </script>
+</body>
+</html>
