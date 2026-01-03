@@ -621,7 +621,7 @@
             <h2 class="login-title" id="loginCompanyName">Job Management System</h2>
             <p class="login-subtitle">Sign in to access your dashboard</p>
             <div class="login-error" id="loginError"></div>
-            <input type="email" class="login-input" id="loginEmail" placeholder="Email address" />
+            <input type="User ID" class="login-input" id="loginUser ID" placeholder="User ID" />
             <input type="password" class="login-input" id="loginPassword" placeholder="Password" />
             <button class="login-btn" id="loginBtn" onclick="handleLogin()">Sign In</button>
         </div>
@@ -912,7 +912,7 @@
             setDefaultDates();
             
             // Enter key handlers
-            document.getElementById('loginEmail').addEventListener('keypress', function(e) {
+            document.getElementById('loginUserId').addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') document.getElementById('loginPassword').focus();
             });
             document.getElementById('loginPassword').addEventListener('keypress', function(e) {
@@ -1008,7 +1008,7 @@
 
         // ========== LOGIN ==========
         async function handleLogin() {
-            var email = document.getElementById('loginEmail').value. trim();
+            var email = document.getElementById('loginUserId').value. trim();
             var password = document.getElementById('loginPassword').value;
             var errorEl = document.getElementById('loginError');
             var btn = document.getElementById('loginBtn');
@@ -1059,7 +1059,7 @@
         function handleLogout() {
             if (! confirm('Are you sure you want to logout?')) return;
             clearSession();
-            document.getElementById('loginEmail').value = '';
+            document.getElementById('loginUserId').value = '';
             document.getElementById('loginPassword').value = '';
             document. getElementById('loginError').style.display = 'none';
             showLoginPage();
@@ -1696,4 +1696,5 @@
     </script>
 </body>
 </html>
+
 
