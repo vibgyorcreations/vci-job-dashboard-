@@ -22,8 +22,8 @@ let sessionTimer = null;
 let sessionWarnTimer = null;
 let printJobId   = null;
 let clockTimer   = null;
-const SESSION_TIMEOUT  = 15 * 60 * 1000; // 15 min
-const SESSION_WARN     = 12 * 60 * 1000; // warn at 12 min
+const SESSION_TIMEOUT  = 15 * 60 * 1000; // 15 min inactivity → logout
+const SESSION_WARN     = 12 * 60 * 1000; // warn at 12 min mark (3 min before timeout)
 
 // ========== PERMISSIONS ==========
 const ROLE_PERMISSIONS = {
@@ -781,13 +781,13 @@ function renderAnalytics(){
     `<div class="bar-row"><div class="bar-label">${s.label}</div><div class="bar-track"><div class="bar-fill" style="width:${(s.val/maxS*100).toFixed(0)}%;background:${s.color}"><span class="bar-val">${s.val}</span></div></div></div>`
   ).join('');
   // Priority chart
-  const pris = [{label:'High',val:jobs.filter(j=>(j.priority||'').toLowerCase()==='high'),color:'var(--danger)'},
-    {label:'Medium',val:jobs.filter(j=>(j.priority||'').toLowerCase()==='medium'),color:'var(--warning)'},
-    {label:'Low',val:jobs.filter(j=>(j.priority||'').toLowerCase()==='low'),color:'var(--success)'}];
-  const maxP = Math.max(1,...pris.map(p=>p.val.length));
+  const pris = [{label:'High',val:jobs.filter(j=>(j.priority||'').toLowerCase()==='high').length,color:'var(--danger)'},
+    {label:'Medium',val:jobs.filter(j=>(j.priority||'').toLowerCase()==='medium').length,color:'var(--warning)'},
+    {label:'Low',val:jobs.filter(j=>(j.priority||'').toLowerCase()==='low').length,color:'var(--success)'}];
+  const maxP = Math.max(1,...pris.map(p=>p.val));
   const pc = document.getElementById('priorityChart');
   if(pc) pc.innerHTML = pris.map(p =>
-    `<div class="bar-row"><div class="bar-label">${p.label}</div><div class="bar-track"><div class="bar-fill" style="width:${(p.val.length/maxP*100).toFixed(0)}%;background:${p.color}"><span class="bar-val">${p.val.length}</span></div></div></div>`
+    `<div class="bar-row"><div class="bar-label">${p.label}</div><div class="bar-track"><div class="bar-fill" style="width:${(p.val/maxP*100).toFixed(0)}%;background:${p.color}"><span class="bar-val">${p.val}</span></div></div></div>`
   ).join('');
   // Heatmap (last 14 days of archive)
   const hm = document.getElementById('throughputHeatmap');
@@ -961,7 +961,10 @@ function saveMachine(){
     const m = appData.machines.find(x => x.id===editId);
     if(m){ m.name=name; m.type=document.getElementById('machineType').value.trim(); m.capacity=parseFloat(document.getElementById('machineCapacity').value)||0; }
   } else {
-    appData.machines.push({id:'mach-'+(crypto.randomUUID ? crypto.randomUUID() : Date.now()+'-'+Math.random().toString(36).slice(2)), name, type:document.getElementById('machineType').value.trim(), capacity:parseFloat(document.getElementById('machineCapacity').value)||0, totalSqft:0, jobCount:0});
+    const machineId = 'mach-' + (crypto.randomUUID ? crypto.randomUUID() : Date.now() + '-' + Math.random().toString(36).slice(2, 11));
+    const machineType = document.getElementById('machineType').value.trim();
+    const machineCapacity = parseFloat(document.getElementById('machineCapacity').value) || 0;
+    appData.machines.push({ id: machineId, name, type: machineType, capacity: machineCapacity, totalSqft: 0, jobCount: 0 });
   }
   saveLocal();
   closeModal('addMachineModal');
