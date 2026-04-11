@@ -34,11 +34,31 @@ var Toast = {
         var toast = document.createElement('div');
         toast.className = 'toast toast-' + type;
 
-        toast.innerHTML =
-            '<span class="toast-icon">' + (Toast.icons[type] || 'ℹ️') + '</span>' +
-            '<div class="toast-body"><div class="toast-msg">' + message + '</div></div>' +
-            '<button class="toast-close" onclick="Toast.remove(this.parentElement)">✕</button>' +
-            '<div class="toast-progress" style="animation-duration:' + duration + 'ms"></div>';
+        var msgEl = document.createElement('div');
+        msgEl.className = 'toast-msg';
+        msgEl.textContent = message;
+
+        var body = document.createElement('div');
+        body.className = 'toast-body';
+        body.appendChild(msgEl);
+
+        var iconEl = document.createElement('span');
+        iconEl.className = 'toast-icon';
+        iconEl.textContent = Toast.icons[type] || 'ℹ️';
+
+        var closeBtn = document.createElement('button');
+        closeBtn.className = 'toast-close';
+        closeBtn.textContent = '✕';
+        closeBtn.addEventListener('click', function() { Toast.remove(toast); });
+
+        var progress = document.createElement('div');
+        progress.className = 'toast-progress';
+        progress.style.animationDuration = duration + 'ms';
+
+        toast.appendChild(iconEl);
+        toast.appendChild(body);
+        toast.appendChild(closeBtn);
+        toast.appendChild(progress);
 
         container.appendChild(toast);
 
@@ -267,8 +287,18 @@ async function loadSettingsForLogin() {
             var logoEl = document.getElementById('loginLogoContainer');
             if (settings.companyName && nameEl) nameEl.textContent = settings.companyName;
             if (settings.companyLogo && logoEl) {
-                logoEl.innerHTML = '<img src="' + settings.companyLogo +
-                    '" class="login-logo" onerror="this.parentElement.innerHTML=\'<div class=login-logo-placeholder>🏢</div>\'" />';
+                var img = document.createElement('img');
+                img.src = settings.companyLogo;
+                img.className = 'login-logo';
+                img.alt = 'Company Logo';
+                img.addEventListener('error', function() {
+                    var ph = document.createElement('div');
+                    ph.className = 'login-logo-placeholder';
+                    ph.textContent = '🏢';
+                    if (this.parentElement) { this.parentElement.innerHTML = ''; this.parentElement.appendChild(ph); }
+                });
+                logoEl.innerHTML = '';
+                logoEl.appendChild(img);
             }
         }
     } catch (e) {
@@ -360,8 +390,18 @@ function applyBranding() {
     }
 
     if (settings.companyLogo && headerEl) {
-        headerEl.innerHTML = '<img src="' + settings.companyLogo +
-            '" class="header-logo" onerror="this.parentElement.innerHTML=\'<div class=header-logo-placeholder>🏢</div>\'" />';
+        var img = document.createElement('img');
+        img.src = settings.companyLogo;
+        img.className = 'header-logo';
+        img.alt = 'Company Logo';
+        img.addEventListener('error', function() {
+            var ph = document.createElement('div');
+            ph.className = 'header-logo-placeholder';
+            ph.textContent = '🏢';
+            if (this.parentElement) { this.parentElement.innerHTML = ''; this.parentElement.appendChild(ph); }
+        });
+        headerEl.innerHTML = '';
+        headerEl.appendChild(img);
     }
 
     if (currentUser) {
@@ -571,7 +611,7 @@ function jobTemplate(job, buttonText, buttonAction, canMove, canDelete, isAdmin)
     var id = job.id || '';
 
     var deleteBtn = canDelete
-        ? '<button class="job-delete-btn" onclick="deleteJob(\'' + id + '\')" title="Delete">✕</button>'
+        ? '<button class="job-delete-btn" onclick="deleteJob(\'' + id + '\')" title="Delete" aria-label="Delete job">✕</button>'
         : '';
 
     var actionBtn = canMove
@@ -579,10 +619,10 @@ function jobTemplate(job, buttonText, buttonAction, canMove, canDelete, isAdmin)
         : '<button class="action-btn btn-move" disabled>' + buttonText + '</button>';
 
     var dupBtn = isAdmin
-        ? '<button class="action-btn btn-duplicate" onclick="duplicateJob(\'' + id + '\')" title="Duplicate">⧉</button>'
+        ? '<button class="action-btn btn-duplicate" onclick="duplicateJob(\'' + id + '\')" title="Duplicate" aria-label="Duplicate job">⧉</button>'
         : '';
 
-    var notesText    = (job.notes || '').replace(/'/g, "\\'").replace(/\n/g, ' ');
+    var notesText    = (job.notes || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\n/g, ' ');
     var priorityText = job.priority || 'Priority';
     var priorityClass = getPriorityClass(job.priority);
     var urgentClass   = (job.priority || '').toLowerCase() === 'high' ? ' priority-urgent' : '';

@@ -1482,10 +1482,6 @@ body::before {
    ============================================================ */
 @media (max-width: 1200px) {
   .columns { grid-template-columns: repeat(2, 1fr); }
-}
-
-@media (max-width: 900px) {
-  .columns { grid-template-columns: repeat(2, 1fr); }
   .stats-bar { grid-template-columns: repeat(2, 1fr); }
 }
 
