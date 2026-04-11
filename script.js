@@ -854,7 +854,7 @@ function addMaterial(){
   const name = document.getElementById('matName').value.trim();
   if(!name){ showToast('❌ Name required','error'); return; }
   const mat = {
-    id:'mat-'+Date.now(),
+    id:'mat-'+(crypto.randomUUID ? crypto.randomUUID() : Date.now()+'-'+Math.random().toString(36).slice(2)),
     name,
     category: document.getElementById('matCategory').value.trim(),
     stock: parseFloat(document.getElementById('matStock').value)||0,
@@ -961,7 +961,7 @@ function saveMachine(){
     const m = appData.machines.find(x => x.id===editId);
     if(m){ m.name=name; m.type=document.getElementById('machineType').value.trim(); m.capacity=parseFloat(document.getElementById('machineCapacity').value)||0; }
   } else {
-    appData.machines.push({id:'mach-'+Date.now(), name, type:document.getElementById('machineType').value.trim(), capacity:parseFloat(document.getElementById('machineCapacity').value)||0, totalSqft:0, jobCount:0});
+    appData.machines.push({id:'mach-'+(crypto.randomUUID ? crypto.randomUUID() : Date.now()+'-'+Math.random().toString(36).slice(2)), name, type:document.getElementById('machineType').value.trim(), capacity:parseFloat(document.getElementById('machineCapacity').value)||0, totalSqft:0, jobCount:0});
   }
   saveLocal();
   closeModal('addMachineModal');
@@ -1027,7 +1027,13 @@ function applyBranding(){
   if(logo){
     ['loginLogo','sidebarLogo'].forEach(id => {
       const el = document.getElementById(id);
-      if(el) el.innerHTML = `<img src="${escHtml(logo)}" style="width:100%;height:100%;object-fit:contain;border-radius:12px" onerror="this.parentElement.textContent='🏭'">`;
+      if(!el) return;
+      const img = document.createElement('img');
+      img.style.cssText = 'width:100%;height:100%;object-fit:contain;border-radius:12px';
+      img.addEventListener('error', () => { el.textContent = '🏭'; });
+      img.src = logo;
+      el.textContent = '';
+      el.appendChild(img);
     });
   }
   if(appData.settings.accentColor) document.documentElement.style.setProperty('--primary', appData.settings.accentColor);
