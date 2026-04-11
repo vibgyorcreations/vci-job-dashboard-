@@ -863,3 +863,40 @@ body::before {
   .kpi-bar { grid-template-columns:repeat(2,1fr); }
   .dash-toolbar { flex-direction:column; align-items:stretch; }
 }
+
+/* ========== CATEGORY MANAGER ========== */
+.cat-add-row {
+  display:flex; gap:10px; margin-bottom:16px;
+}
+.cat-add-row .form-input {
+  flex:1;
+}
+.categories-list {
+  display:flex; flex-direction:column; gap:6px; max-height:340px; overflow-y:auto;
+}
+.cat-empty {
+  color:var(--text-muted); font-size:13px; padding:20px; text-align:center;
+  border:1px dashed var(--glass-border); border-radius:var(--radius-sm);
+}
+.cat-row {
+  display:flex; align-items:center; gap:10px;
+  padding:10px 14px; border-radius:var(--radius-sm);
+  background:rgba(255,255,255,0.04); border:1px solid var(--glass-border);
+  transition:background 0.2s;
+}
+.cat-row:hover { background:rgba(0,240,255,0.06); }
+.cat-name {
+  flex:1; font-size:14px; color:var(--text);
+}
+.cat-edit-input {
+  flex:1; padding:6px 10px; font-size:13px;
+}
+.cat-row-actions {
+  display:flex; gap:4px;
+}
+
+/* Machine notes */
+.machine-notes {
+  font-size:12px; color:var(--text-muted); margin:6px 0 2px;
+  font-style:italic; padding:4px 0; border-top:1px solid var(--glass-border);
+}

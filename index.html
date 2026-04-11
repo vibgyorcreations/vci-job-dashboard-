@@ -213,7 +213,8 @@
       <div class="view-header">
         <h2 class="view-title">📦 Inventory</h2>
         <div class="view-actions">
-          <button class="btn-primary" onclick="openModal('addMaterialModal')">&#10010; Add Material</button>
+          <button class="btn-primary" onclick="openMaterialModal()">&#10010; Add Material</button>
+          <button class="btn-secondary" onclick="openManageCategoriesModal()">🏷️ Categories</button>
           <button class="btn-secondary" onclick="exportInventoryCSV()">&#11015; CSV</button>
         </div>
       </div>
@@ -348,17 +349,22 @@
   </div>
 </div>
 
-<!-- Add Material Modal -->
+<!-- Add / Edit Material Modal -->
 <div class="modal" id="addMaterialModal">
   <div class="modal-content glass">
     <div class="modal-header">
-      <h3 class="modal-title">&#10010; Add Material</h3>
+      <h3 class="modal-title" id="addMaterialTitle">&#10010; Add Material</h3>
       <button class="modal-close" onclick="closeModal('addMaterialModal')">&#10005;</button>
     </div>
     <div class="modal-body">
+      <input type="hidden" id="matEditId">
       <div class="form-grid">
         <div class="form-group"><label class="form-label">Material Name *</label><input type="text" class="form-input" id="matName" placeholder="e.g. Vinyl Roll"></div>
-        <div class="form-group"><label class="form-label">Category</label><input type="text" class="form-input" id="matCategory" placeholder="e.g. Substrate"></div>
+        <div class="form-group">
+          <label class="form-label">Category</label>
+          <input type="text" class="form-input" id="matCategory" placeholder="e.g. Substrate" list="categoriesList">
+          <datalist id="categoriesList"></datalist>
+        </div>
         <div class="form-group"><label class="form-label">Initial Stock</label><input type="number" class="form-input" id="matStock" placeholder="0" min="0"></div>
         <div class="form-group"><label class="form-label">Unit</label><input type="text" class="form-input" id="matUnit" placeholder="rolls / sheets / m²"></div>
         <div class="form-group"><label class="form-label">Low Stock Alert At</label><input type="number" class="form-input" id="matLowAt" placeholder="5" min="0"></div>
@@ -366,7 +372,7 @@
       </div>
       <div class="modal-footer">
         <button class="btn-secondary" onclick="closeModal('addMaterialModal')">Cancel</button>
-        <button class="btn-primary" onclick="addMaterial()">&#10010; Add</button>
+        <button class="btn-primary" id="matSaveBtn" onclick="saveMaterial()">&#10010; Add</button>
       </div>
     </div>
   </div>
@@ -393,7 +399,30 @@
   </div>
 </div>
 
-<!-- Add Machine Modal -->
+<!-- Categories Manager Modal -->
+<div class="modal" id="categoriesModal">
+  <div class="modal-content glass">
+    <div class="modal-header">
+      <h3 class="modal-title">🏷️ Manage Categories</h3>
+      <button class="modal-close" onclick="closeModal('categoriesModal')">&#10005;</button>
+    </div>
+    <div class="modal-body">
+      <p style="color:var(--text-muted);font-size:13px;margin-bottom:16px">Categories are used when adding materials. Add as many as you need.</p>
+      <!-- Add new category row -->
+      <div class="cat-add-row">
+        <input type="text" class="form-input" id="newCatName" placeholder="New category name…" onkeydown="if(event.key==='Enter')saveCategory()">
+        <button class="btn-primary" onclick="saveCategory()">&#10010; Add</button>
+      </div>
+      <!-- Existing categories list -->
+      <div id="categoriesList2" class="categories-list"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModal('categoriesModal')">Close</button>
+    </div>
+  </div>
+</div>
+
+
 <div class="modal" id="addMachineModal">
   <div class="modal-content glass">
     <div class="modal-header">
@@ -404,12 +433,21 @@
       <input type="hidden" id="machineEditId">
       <div class="form-grid">
         <div class="form-group"><label class="form-label">Machine Name *</label><input type="text" class="form-input" id="machineName" placeholder="e.g. Press A"></div>
-        <div class="form-group"><label class="form-label">Type</label><input type="text" class="form-input" id="machineType" placeholder="e.g. Digital Press"></div>
+        <div class="form-group"><label class="form-label">Type / Model</label><input type="text" class="form-input" id="machineType" placeholder="e.g. Digital Press"></div>
         <div class="form-group"><label class="form-label">Daily Capacity (Sq.Ft)</label><input type="number" class="form-input" id="machineCapacity" placeholder="500" min="0"></div>
+        <div class="form-group">
+          <label class="form-label">Status</label>
+          <select class="form-input" id="machineStatus">
+            <option value="active">Active</option>
+            <option value="maintenance">Under Maintenance</option>
+            <option value="offline">Offline</option>
+          </select>
+        </div>
+        <div class="form-group form-full"><label class="form-label">Notes</label><input type="text" class="form-input" id="machineNotes" placeholder="Optional notes about this machine"></div>
       </div>
       <div class="modal-footer">
         <button class="btn-secondary" onclick="closeModal('addMachineModal')">Cancel</button>
-        <button class="btn-primary" onclick="saveMachine()">💾 Save</button>
+        <button class="btn-primary" onclick="saveMachine()">💾 Save Machine</button>
       </div>
     </div>
   </div>

@@ -9,6 +9,7 @@ let appData = {
   archive: [],
   materials: [],
   machines: [],
+  categories: [],
   settings: { companyName:'FactoryFlow OS', companyLogo:'', driveFolderId:'', theme:'dark', accentColor:'#00f0ff' },
   pins: { admin:'1234', waiting:'1111', printing:'2222', assembly:'3333', dispatch:'4444' }
 };
@@ -64,11 +65,13 @@ function loadLocal(){
       if(parsed.archive)   appData.archive   = parsed.archive;
       if(parsed.materials) appData.materials = parsed.materials;
       if(parsed.machines && parsed.machines.length) appData.machines = parsed.machines;
+      if(parsed.categories) appData.categories = parsed.categories;
       if(parsed.settings)  Object.assign(appData.settings, parsed.settings);
       if(parsed.pins)      Object.assign(appData.pins, parsed.pins);
     }
   } catch(e){}
   if(!appData.machines || !appData.machines.length) appData.machines = defaultMachines();
+  if(!appData.categories) appData.categories = [];
 }
 function defaultMachines(){
   return [
@@ -825,6 +828,7 @@ function renderAnalytics(){
 
 // ========== INVENTORY ==========
 function renderInventory(){
+  refreshCategoryDatalist();
   const alerts = document.getElementById('lowStockAlerts');
   const low = appData.materials.filter(m => (m.stock||0) <= (m.lowAt||5));
   if(alerts) alerts.innerHTML = low.map(m => `<div class="low-alert">⚠️ ${escHtml(m.name)}: ${m.stock} ${escHtml(m.unit||'')} remaining</div>`).join('');
@@ -842,6 +846,7 @@ function renderInventory(){
       <td>${m.lowAt||5}</td>
       <td>${badge}</td>
       <td>
+        <button class="btn-icon" title="Edit material" onclick="openMaterialModal('${escHtml(m.id)}')">✏️</button>
         <button class="btn-icon" onclick="openStockModal('${escHtml(m.id)}','in')">+In</button>
         <button class="btn-icon" onclick="openStockModal('${escHtml(m.id)}','out')" style="margin:0 4px">-Out</button>
         <button class="btn-icon" onclick="openStockModal('${escHtml(m.id)}','adjust')">±Adj</button>
@@ -850,26 +855,55 @@ function renderInventory(){
     </tr>`;
   }).join('');
 }
-function addMaterial(){
+
+// Open Add or Edit material modal
+function openMaterialModal(mid){
+  refreshCategoryDatalist();
+  const isEdit = !!mid;
+  const m = isEdit ? appData.materials.find(x => x.id === mid) : null;
+  const titleEl = document.getElementById('addMaterialTitle');
+  const saveBtn = document.getElementById('matSaveBtn');
+  if(titleEl) titleEl.textContent = isEdit ? '✏️ Edit Material' : '✚ Add Material';
+  if(saveBtn) saveBtn.textContent = isEdit ? '💾 Save Changes' : '✚ Add';
+  document.getElementById('matEditId').value = mid || '';
+  document.getElementById('matName').value     = m ? m.name     : '';
+  document.getElementById('matCategory').value = m ? (m.category||'') : '';
+  document.getElementById('matStock').value    = m ? (m.stock||0) : '';
+  document.getElementById('matUnit').value     = m ? (m.unit||'') : '';
+  document.getElementById('matLowAt').value    = m ? (m.lowAt||5) : '';
+  document.getElementById('matCost').value     = m ? (m.cost||0)  : '';
+  openModal('addMaterialModal');
+}
+
+function saveMaterial(){
   const name = document.getElementById('matName').value.trim();
-  if(!name){ showToast('❌ Name required','error'); return; }
-  const mat = {
-    id:'mat-'+(crypto.randomUUID ? crypto.randomUUID() : Date.now()+'-'+Math.random().toString(36).slice(2)),
+  if(!name){ showToast('❌ Material name is required','error'); return; }
+  const editId = document.getElementById('matEditId').value;
+  const fields = {
     name,
     category: document.getElementById('matCategory').value.trim(),
-    stock: parseFloat(document.getElementById('matStock').value)||0,
-    unit:  document.getElementById('matUnit').value.trim(),
-    lowAt: parseFloat(document.getElementById('matLowAt').value)||5,
-    cost:  parseFloat(document.getElementById('matCost').value)||0,
-    history:[]
+    stock:    parseFloat(document.getElementById('matStock').value)||0,
+    unit:     document.getElementById('matUnit').value.trim(),
+    lowAt:    parseFloat(document.getElementById('matLowAt').value)||5,
+    cost:     parseFloat(document.getElementById('matCost').value)||0
   };
-  appData.materials.push(mat);
+  if(editId){
+    const mat = appData.materials.find(m => m.id === editId);
+    if(mat){ Object.assign(mat, fields); }
+  } else {
+    const materialId = 'mat-' + (crypto.randomUUID ? crypto.randomUUID() : Date.now() + '-' + Math.random().toString(36).slice(2, 11));
+    appData.materials.push({ id: materialId, ...fields, history:[] });
+  }
+  // Auto-add new category to the list if not already present
+  if(fields.category && !appData.categories.includes(fields.category)){
+    appData.categories.push(fields.category);
+  }
   saveLocal();
   closeModal('addMaterialModal');
-  showToast('✅ Material added','success');
-  ['matName','matCategory','matStock','matUnit','matLowAt','matCost'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  showToast(editId ? '✅ Material updated' : '✅ Material added', 'success');
   renderInventory();
 }
+
 function deleteMaterial(mid){
   if(!confirm('Delete this material?')) return;
   appData.materials = appData.materials.filter(m => m.id!==mid);
@@ -914,23 +948,131 @@ function exportInventoryCSV(){
   downloadCSV('inventory-export.csv', headers, rows);
 }
 
+// ========== CATEGORY MANAGER ==========
+function refreshCategoryDatalist(){
+  const dl = document.getElementById('categoriesList');
+  if(dl) dl.innerHTML = appData.categories.map(c => `<option value="${escHtml(c)}">`).join('');
+}
+
+function openManageCategoriesModal(){
+  renderCategoriesManager();
+  openModal('categoriesModal');
+}
+
+function renderCategoriesManager(){
+  const list = document.getElementById('categoriesList2');
+  if(!list) return;
+  if(!appData.categories.length){
+    list.innerHTML = '<div class="cat-empty">No categories yet — add one above.</div>';
+    return;
+  }
+  list.innerHTML = appData.categories.map((c, idx) => `
+    <div class="cat-row" id="cat-row-${idx}">
+      <span class="cat-name" id="cat-name-${idx}">${escHtml(c)}</span>
+      <input type="text" class="form-input cat-edit-input hidden" id="cat-edit-${idx}" value="${escHtml(c)}">
+      <div class="cat-row-actions">
+        <button class="btn-icon cat-edit-btn" title="Rename" onclick="startEditCategory(${idx})">✏️</button>
+        <button class="btn-icon cat-save-btn hidden" title="Save" onclick="commitEditCategory(${idx})">✅</button>
+        <button class="btn-icon cat-cancel-btn hidden" title="Cancel" onclick="cancelEditCategory(${idx})">✕</button>
+        <button class="btn-icon" title="Delete" style="color:var(--danger)" onclick="deleteCategory(${idx})">🗑️</button>
+      </div>
+    </div>`).join('');
+}
+
+function saveCategory(){
+  const input = document.getElementById('newCatName');
+  const name = input ? input.value.trim() : '';
+  if(!name){ showToast('❌ Category name required','error'); return; }
+  if(appData.categories.includes(name)){ showToast('⚠️ Category already exists','warning'); return; }
+  appData.categories.push(name);
+  saveLocal();
+  if(input) input.value = '';
+  renderCategoriesManager();
+  refreshCategoryDatalist();
+  showToast('✅ Category added','success');
+}
+
+function startEditCategory(idx){
+  const nameEl  = document.getElementById(`cat-name-${idx}`);
+  const inputEl = document.getElementById(`cat-edit-${idx}`);
+  const editBtn = document.querySelector(`#cat-row-${idx} .cat-edit-btn`);
+  const saveBtn = document.querySelector(`#cat-row-${idx} .cat-save-btn`);
+  const cancelBtn = document.querySelector(`#cat-row-${idx} .cat-cancel-btn`);
+  if(!nameEl || !inputEl) return;
+  nameEl.classList.add('hidden');
+  inputEl.classList.remove('hidden');
+  inputEl.focus();
+  if(editBtn) editBtn.classList.add('hidden');
+  if(saveBtn) saveBtn.classList.remove('hidden');
+  if(cancelBtn) cancelBtn.classList.remove('hidden');
+}
+
+function cancelEditCategory(idx){
+  const nameEl  = document.getElementById(`cat-name-${idx}`);
+  const inputEl = document.getElementById(`cat-edit-${idx}`);
+  const editBtn = document.querySelector(`#cat-row-${idx} .cat-edit-btn`);
+  const saveBtn = document.querySelector(`#cat-row-${idx} .cat-save-btn`);
+  const cancelBtn = document.querySelector(`#cat-row-${idx} .cat-cancel-btn`);
+  if(nameEl) nameEl.classList.remove('hidden');
+  if(inputEl){ inputEl.classList.add('hidden'); inputEl.value = appData.categories[idx] || ''; }
+  if(editBtn) editBtn.classList.remove('hidden');
+  if(saveBtn) saveBtn.classList.add('hidden');
+  if(cancelBtn) cancelBtn.classList.add('hidden');
+}
+
+function commitEditCategory(idx){
+  const inputEl = document.getElementById(`cat-edit-${idx}`);
+  const newName = inputEl ? inputEl.value.trim() : '';
+  if(!newName){ showToast('❌ Name cannot be empty','error'); return; }
+  if(appData.categories.indexOf(newName) !== -1 && appData.categories.indexOf(newName) !== idx){
+    showToast('⚠️ Category already exists','warning'); return;
+  }
+  const oldName = appData.categories[idx];
+  appData.categories[idx] = newName;
+  // Update materials that use the old category name
+  appData.materials.forEach(m => { if(m.category === oldName) m.category = newName; });
+  saveLocal();
+  renderCategoriesManager();
+  refreshCategoryDatalist();
+  showToast('✅ Category renamed','success');
+}
+
+function deleteCategory(idx){
+  const name = appData.categories[idx];
+  if(!confirm(`Delete category "${name}"? Materials using it won't be deleted.`)) return;
+  appData.categories.splice(idx, 1);
+  saveLocal();
+  renderCategoriesManager();
+  refreshCategoryDatalist();
+  showToast('🗑️ Category deleted','warning');
+}
+
 // ========== MACHINES ==========
 function renderMachines(){
   const grid = document.getElementById('machinesGrid');
   if(!grid) return;
-  if(!appData.machines.length){ grid.innerHTML='<div style="color:var(--text-muted);padding:40px;text-align:center">No machines added</div>'; return; }
+  if(!appData.machines.length){ grid.innerHTML='<div style="color:var(--text-muted);padding:40px;text-align:center">No machines added yet. Click ✚ Add Machine to get started.</div>'; return; }
   grid.innerHTML = appData.machines.map(m => {
     const pct = m.capacity ? Math.min(100,(m.totalSqft||0)/m.capacity*100) : 0;
+    const statusMap = {
+      maintenance: { color: 'var(--warning)', label: '🔧 Maintenance' },
+      offline:     { color: 'var(--danger)',  label: '⛔ Offline' }
+    };
+    const statusInfo = statusMap[m.status] || { color: 'var(--success)', label: '✅ Active' };
+    const statusColor = statusInfo.color;
+    const statusLabel = statusInfo.label;
     return `<div class="machine-card">
       <div class="machine-name">${escHtml(m.name)}</div>
       <div class="machine-type">${escHtml(m.type||'')}</div>
+      <div class="machine-stat"><span class="machine-stat-label">Status</span><span class="machine-stat-val" style="color:${statusColor}">${statusLabel}</span></div>
       <div class="machine-stat"><span class="machine-stat-label">Capacity</span><span class="machine-stat-val">${m.capacity||0} sq.ft/day</span></div>
       <div class="machine-stat"><span class="machine-stat-label">Total Jobs</span><span class="machine-stat-val">${m.jobCount||0}</span></div>
       <div class="machine-stat"><span class="machine-stat-label">Total Sq.Ft</span><span class="machine-stat-val">${(m.totalSqft||0).toFixed(0)}</span></div>
-      <div class="machine-capacity-bar"><div class="machine-capacity-fill" style="width:${pct.toFixed(0)}%"></div></div>
+      ${m.notes ? `<div class="machine-notes">${escHtml(m.notes)}</div>` : ''}
+      <div class="machine-capacity-bar" title="${pct.toFixed(0)}% utilisation"><div class="machine-capacity-fill" style="width:${pct.toFixed(0)}%"></div></div>
       <div class="machine-actions">
-        <button class="btn-secondary" style="flex:1;padding:6px 10px;font-size:11px" onclick="openEditMachine('${escHtml(m.id)}')">✏️ Edit</button>
-        <button class="btn-icon" onclick="deleteMachine('${escHtml(m.id)}')" style="color:var(--danger)">🗑️</button>
+        <button class="btn-secondary" style="flex:1;padding:6px 10px;font-size:12px" onclick="openEditMachine('${escHtml(m.id)}')">✏️ Edit</button>
+        <button class="btn-icon" onclick="deleteMachine('${escHtml(m.id)}')" style="color:var(--danger)" title="Delete machine">🗑️</button>
       </div>
     </div>`;
   }).join('');
@@ -941,34 +1083,43 @@ function openAddMachineModal(){
   document.getElementById('machineName').value = '';
   document.getElementById('machineType').value = '';
   document.getElementById('machineCapacity').value = '';
+  document.getElementById('machineStatus').value = 'active';
+  document.getElementById('machineNotes').value = '';
   openModal('addMachineModal');
 }
 function openEditMachine(mid){
   const m = appData.machines.find(x => x.id===mid);
   if(!m) return;
-  document.getElementById('addMachineTitle').textContent = '✏️ Edit Machine';
+  document.getElementById('addMachineTitle').textContent = '✏️ Edit Machine — ' + m.name;
   document.getElementById('machineEditId').value = m.id;
   document.getElementById('machineName').value = m.name;
   document.getElementById('machineType').value = m.type||'';
   document.getElementById('machineCapacity').value = m.capacity||0;
+  document.getElementById('machineStatus').value = m.status||'active';
+  document.getElementById('machineNotes').value = m.notes||'';
   openModal('addMachineModal');
 }
 function saveMachine(){
   const editId = document.getElementById('machineEditId').value;
   const name = document.getElementById('machineName').value.trim();
-  if(!name){ showToast('❌ Name required','error'); return; }
+  if(!name){ showToast('❌ Machine name is required','error'); return; }
+  const fields = {
+    name,
+    type:     document.getElementById('machineType').value.trim(),
+    capacity: parseFloat(document.getElementById('machineCapacity').value) || 0,
+    status:   document.getElementById('machineStatus').value || 'active',
+    notes:    document.getElementById('machineNotes').value.trim()
+  };
   if(editId){
     const m = appData.machines.find(x => x.id===editId);
-    if(m){ m.name=name; m.type=document.getElementById('machineType').value.trim(); m.capacity=parseFloat(document.getElementById('machineCapacity').value)||0; }
+    if(m){ Object.assign(m, fields); }
   } else {
-    const machineId = 'mach-' + (crypto.randomUUID ? crypto.randomUUID() : Date.now() + '-' + Math.random().toString(36).slice(2, 11));
-    const machineType = document.getElementById('machineType').value.trim();
-    const machineCapacity = parseFloat(document.getElementById('machineCapacity').value) || 0;
-    appData.machines.push({ id: machineId, name, type: machineType, capacity: machineCapacity, totalSqft: 0, jobCount: 0 });
+    const newMachineId = 'mach-' + (crypto.randomUUID ? crypto.randomUUID() : Date.now() + '-' + Math.random().toString(36).slice(2, 11));
+    appData.machines.push({ id: newMachineId, ...fields, totalSqft: 0, jobCount: 0 });
   }
   saveLocal();
   closeModal('addMachineModal');
-  showToast(editId?'✅ Machine updated':'✅ Machine added','success');
+  showToast(editId ? '✅ Machine updated' : '✅ Machine added', 'success');
   renderMachines();
 }
 function deleteMachine(mid){
