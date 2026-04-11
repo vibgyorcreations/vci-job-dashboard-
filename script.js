@@ -6,6 +6,17 @@
 // ========== CONFIGURATION ==========
 var API_URL = 'https://script.google.com/macros/s/AKfycbzbglRY49SnXCq9BrOdL4DtHXxivasmQRn7fiHjByxFwp2OtJg_ML0E-v3SAIN6qSx0ew/exec';
 
+// Safe URL check: only allow http/https to prevent javascript: injection
+function safeURL(url) {
+    if (!url || typeof url !== 'string') return '';
+    var trimmed = url.trim();
+    try {
+        var parsed = new URL(trimmed);
+        if (parsed.protocol === 'https:' || parsed.protocol === 'http:') return trimmed;
+    } catch (e) { /* ignore */ }
+    return '';
+}
+
 // ========== GLOBAL STATE ==========
 var currentUser    = null;
 var permissions    = null;
@@ -287,18 +298,21 @@ async function loadSettingsForLogin() {
             var logoEl = document.getElementById('loginLogoContainer');
             if (settings.companyName && nameEl) nameEl.textContent = settings.companyName;
             if (settings.companyLogo && logoEl) {
-                var img = document.createElement('img');
-                img.src = settings.companyLogo;
-                img.className = 'login-logo';
-                img.alt = 'Company Logo';
-                img.addEventListener('error', function() {
-                    var ph = document.createElement('div');
-                    ph.className = 'login-logo-placeholder';
-                    ph.textContent = '🏢';
-                    if (this.parentElement) { this.parentElement.innerHTML = ''; this.parentElement.appendChild(ph); }
-                });
-                logoEl.innerHTML = '';
-                logoEl.appendChild(img);
+                var safeLogoUrl = safeURL(settings.companyLogo);
+                if (safeLogoUrl) {
+                    var img = document.createElement('img');
+                    img.src = safeLogoUrl;
+                    img.className = 'login-logo';
+                    img.alt = 'Company Logo';
+                    img.addEventListener('error', function() {
+                        var ph = document.createElement('div');
+                        ph.className = 'login-logo-placeholder';
+                        ph.textContent = '🏢';
+                        if (this.parentElement) { this.parentElement.innerHTML = ''; this.parentElement.appendChild(ph); }
+                    });
+                    logoEl.innerHTML = '';
+                    logoEl.appendChild(img);
+                }
             }
         }
     } catch (e) {
@@ -390,18 +404,21 @@ function applyBranding() {
     }
 
     if (settings.companyLogo && headerEl) {
-        var img = document.createElement('img');
-        img.src = settings.companyLogo;
-        img.className = 'header-logo';
-        img.alt = 'Company Logo';
-        img.addEventListener('error', function() {
-            var ph = document.createElement('div');
-            ph.className = 'header-logo-placeholder';
-            ph.textContent = '🏢';
-            if (this.parentElement) { this.parentElement.innerHTML = ''; this.parentElement.appendChild(ph); }
-        });
-        headerEl.innerHTML = '';
-        headerEl.appendChild(img);
+        var safeLogoUrl = safeURL(settings.companyLogo);
+        if (safeLogoUrl) {
+            var img = document.createElement('img');
+            img.src = safeLogoUrl;
+            img.className = 'header-logo';
+            img.alt = 'Company Logo';
+            img.addEventListener('error', function() {
+                var ph = document.createElement('div');
+                ph.className = 'header-logo-placeholder';
+                ph.textContent = '🏢';
+                if (this.parentElement) { this.parentElement.innerHTML = ''; this.parentElement.appendChild(ph); }
+            });
+            headerEl.innerHTML = '';
+            headerEl.appendChild(img);
+        }
     }
 
     if (currentUser) {
@@ -1081,7 +1098,7 @@ async function addUser() {
         var response = await fetch(API_URL, {
             method:  'POST',
             headers: { 'Content-Type': 'text/plain' },
-            body:    JSON.stringify({ action: 'addUser', name, email, password, role })
+            body:    JSON.stringify({ action: 'addUser', name: name, email: email, password: password, role: role })
         });
         var result = await response.json();
         if (result.success) {
