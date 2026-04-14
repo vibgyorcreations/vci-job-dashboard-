@@ -599,6 +599,8 @@ body::before {
 .btn-timeline { background:rgba(255,255,255,.05); color:var(--text-muted); border:1px solid var(--glass-border); }
 .btn-pin-c { background:rgba(255,208,0,.1); color:var(--col-waiting); border:1px solid rgba(255,208,0,.2); }
 .btn-rework-c { background:rgba(255,23,68,.1); color:var(--danger); border:1px solid rgba(255,23,68,.2); }
+.btn-assign-machine { background:rgba(33,150,255,.15); color:var(--col-printing); border:1px solid rgba(33,150,255,.3); }
+.btn-assign-machine:hover { background:rgba(33,150,255,.28); box-shadow:0 0 12px rgba(33,150,255,.35); transform:translateY(-1px); }
 .btn-del { background:rgba(255,23,68,.1); color:var(--danger); border:1px solid rgba(255,23,68,.2); }
 .btn-del:hover { background:rgba(255,23,68,.25); }
 

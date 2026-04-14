@@ -33,10 +33,10 @@ const ROLE_PERMISSIONS = {
     canMoveToPrinting:true, canMoveToAssembly:true, canMoveToDispatch:true, canArchive:true,
     canManageInventory:true, canManageMachines:true, canManageSettings:true,
     canViewDashboard:true, canViewArchive:true, canViewAnalytics:true, canViewInventory:true, canViewMachines:true,
-    canStockIn:true, canStockOut:true, canStockAdjust:true
+    canStockIn:true, canStockOut:true, canStockAdjust:true, canAssignMachine:true
   },
-  waiting:  { canCreateJob:true, canViewDashboard:true, canViewInventory:true },
-  printing: { canMoveToPrinting:true, canViewDashboard:true, canViewInventory:true, canStockOut:true },
+  waiting:  { canCreateJob:true, canViewDashboard:true, canViewInventory:true, canStockOut:true },
+  printing: { canMoveToPrinting:true, canMoveToAssembly:true, canViewDashboard:true, canViewInventory:true, canStockOut:true, canAssignMachine:true },
   assembly: { canMoveToAssembly:true, canViewDashboard:true, canViewInventory:true, canStockOut:true },
   dispatch: { canMoveToDispatch:true, canArchive:true, canViewDashboard:true, canViewArchive:true }
 };
@@ -467,13 +467,18 @@ function jobCardHTML(job, colStatus){
   // Action buttons based on status & permissions
   let mainBtn = '';
   if(colStatus==='waiting' && can('canMoveToPrinting'))
-    mainBtn = '<button class="job-act-btn btn-move-next" onclick="startPrint(\''+jid+'\')">🖨️ Print</button>';
+    mainBtn = '<button class="job-act-btn btn-move-next" onclick="approveJob(\''+jid+'\')">✅ Approve</button>';
   else if(colStatus==='printing' && can('canMoveToAssembly'))
     mainBtn = '<button class="job-act-btn btn-move-next" onclick="moveJob(\''+jid+'\',\'assembly\')">🔧 Assembly</button>';
   else if(colStatus==='assembly' && can('canMoveToDispatch'))
     mainBtn = '<button class="job-act-btn btn-move-next" onclick="moveJob(\''+jid+'\',\'dispatch\')">📦 Dispatch</button>';
   else if(colStatus==='dispatch' && can('canArchive'))
     mainBtn = '<button class="job-act-btn btn-archive" onclick="openDispatchModal(\''+jid+'\')">📦 Archive</button>';
+
+  // Machine assignment — only in printing column
+  const assignMachineBtn = (colStatus==='printing' && can('canAssignMachine'))
+    ? '<button class="job-act-btn btn-assign-machine" onclick="openMachineAssignModal(\''+jid+'\')">🔩 Machine</button>'
+    : '';
 
   const editBtn = can('canEditJob')      ? '<button class="job-act-btn btn-edit-card" onclick="editJob(\''+jid+'\')">✏️</button>' : '';
   const dupBtn  = can('canDuplicateJob') ? '<button class="job-act-btn btn-dup" onclick="duplicateJob(\''+jid+'\')">⎘</button>' : '';
@@ -503,7 +508,7 @@ function jobCardHTML(job, colStatus){
         <button class="btn-icon" onmousedown="cancelNotes('${jid}')">✕</button>
       </div>
     </div>
-    <div class="job-card-actions">${mainBtn}${editBtn}${dupBtn}${splitBtn}${pinBtn}${rwBtn}${tlBtn}${delBtn}</div>
+    <div class="job-card-actions">${mainBtn}${assignMachineBtn}${editBtn}${dupBtn}${splitBtn}${pinBtn}${rwBtn}${tlBtn}${delBtn}</div>
   </div>`;
 }
 
@@ -629,20 +634,34 @@ async function moveJob(jid, toStatus){
   updateKPIs();
 }
 
-// ========== PRINT CONFIRM ==========
-function startPrint(jid){
+// ========== APPROVE JOB (waiting → printing, no machine modal) ==========
+async function approveJob(jid){
   if(!can('canMoveToPrinting')){ showToast('❌ Not authorized','error'); return; }
+  await moveJob(jid, 'printing');
+}
+
+// ========== MACHINE ASSIGNMENT (only in printing column) ==========
+function openMachineAssignModal(jid){
+  if(!can('canAssignMachine')){ showToast('❌ Not authorized','error'); return; }
   printJobId = jid;
   const job = appData.jobs.find(j => j.id===jid);
   if(!job) return;
+  const titleEl = document.getElementById('printConfirmTitle');
+  const btnEl   = document.getElementById('printConfirmBtn');
+  if(titleEl) titleEl.textContent = '🔩 Assign Machine';
+  if(btnEl)   btnEl.textContent   = '✓ Assign';
   document.getElementById('printConfirmDesc').textContent = `Job: ${job.id} — ${job.name||''} | Sq.Ft: ${job.sqft||job.size||0}`;
   const mc = document.getElementById('machineCheckboxes');
-  mc.innerHTML = appData.machines.map(m => `
+  const alreadyAssigned = job.machines || [];
+  mc.innerHTML = appData.machines.map(m => {
+    const prev = alreadyAssigned.find(x => x.machineId===m.id);
+    return `
     <div class="machine-check-row">
-      <input type="checkbox" id="mchk-${m.id}" value="${m.id}">
+      <input type="checkbox" id="mchk-${m.id}" value="${m.id}" ${prev?'checked':''}>
       <label class="machine-check-label" for="mchk-${m.id}">${escHtml(m.name)} (${escHtml(m.type)}) — Cap: ${m.capacity} sq.ft/day</label>
-      <input type="number" class="machine-sqft-input" id="msqft-${m.id}" placeholder="sq.ft" min="0" step="0.01">
-    </div>`).join('');
+      <input type="number" class="machine-sqft-input" id="msqft-${m.id}" placeholder="sq.ft" min="0" step="0.01" value="${prev?prev.sqft:''}">
+    </div>`;
+  }).join('');
   openModal('printConfirmModal');
 }
 async function confirmPrint(){
@@ -660,12 +679,11 @@ async function confirmPrint(){
     }
   });
   job.machines = selectedMachines;
-  job.status   = 'printing';
-  addActivity(job, 'Sent to printing' + (selectedMachines.length?' on '+selectedMachines.map(x=>x.machineId).join(','):''), currentRole);
+  addActivity(job, 'Machines assigned' + (selectedMachines.length ? ' (' + selectedMachines.map(x=>x.machineId).join(',') + ')' : ''), currentRole);
   saveLocal();
   closeModal('printConfirmModal');
-  showToast('✅ Job sent to printing','success');
-  try{ await Cloud.pushData('moveJob',{jobId:printJobId, status:'printing', machines:selectedMachines}); } catch(e){}
+  showToast('✅ Machines assigned','success');
+  try{ await Cloud.pushData('updateJobField',{jobId:printJobId, field:'machines', value:selectedMachines}); } catch(e){}
   printJobId = null;
   renderDashboard();
   updateKPIs();

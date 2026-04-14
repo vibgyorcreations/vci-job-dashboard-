@@ -278,7 +278,7 @@
 <div class="modal" id="printConfirmModal">
   <div class="modal-content glass">
     <div class="modal-header">
-      <h3 class="modal-title">🖨️ Confirm Print</h3>
+      <h3 class="modal-title" id="printConfirmTitle">🔩 Assign Machine</h3>
       <button class="modal-close" onclick="closeModal('printConfirmModal')">&#10005;</button>
     </div>
     <div class="modal-body">
@@ -286,7 +286,7 @@
       <div id="machineCheckboxes" class="machine-checkboxes"></div>
       <div class="modal-footer">
         <button class="btn-secondary" onclick="closeModal('printConfirmModal')">Cancel</button>
-        <button class="btn-primary" onclick="confirmPrint()">&#10003; Confirm Print</button>
+        <button class="btn-primary" id="printConfirmBtn" onclick="confirmPrint()">&#10003; Assign</button>
       </div>
     </div>
   </div>
