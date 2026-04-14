@@ -268,7 +268,11 @@ async function loadData(){
         lists.forEach(s => { if(Array.isArray(data[s])) data[s].forEach(j => { j.status = j.status || s; appData.jobs.push(j); }); });
       }
       if(Array.isArray(data.archive)) appData.archive = data.archive;
+      if(Array.isArray(data.materials)) appData.materials = data.materials;
+      if(Array.isArray(data.machines) && data.machines.length) appData.machines = data.machines;
+      if(Array.isArray(data.categories)) appData.categories = data.categories;
       if(data.settings) Object.assign(appData.settings, data.settings);
+      if(data.pins) Object.assign(appData.pins, data.pins);
     }
     saveLocal();
     setSyncStatus('synced');
@@ -755,6 +759,11 @@ async function confirmPrint(){
   closeModal('printConfirmModal');
   showToast('✅ Machines assigned','success');
   try{ await Cloud.pushData('updateJobField',{jobId:printJobId, field:'machines', value:selectedMachines}); } catch(e){}
+  // Sync updated machine stats (totalSqft, jobCount) back to cloud
+  for(const sel of selectedMachines){
+    const m = appData.machines.find(x => x.id===sel.machineId);
+    if(m){ try{ await Cloud.pushData('updateMachine', m); } catch(e){} }
+  }
   printJobId = null;
   renderDashboard();
   updateKPIs();
@@ -1048,7 +1057,7 @@ function openMaterialModal(mid){
   openModal('addMaterialModal');
 }
 
-function saveMaterial(){
+async function saveMaterial(){
   const name = document.getElementById('matName').value.trim();
   if(!name){ showToast('❌ Material name is required','error'); return; }
   const editId = document.getElementById('matEditId').value;
@@ -1060,12 +1069,14 @@ function saveMaterial(){
     lowAt:    parseFloat(document.getElementById('matLowAt').value)||5,
     cost:     parseFloat(document.getElementById('matCost').value)||0
   };
+  let mat;
   if(editId){
-    const mat = appData.materials.find(m => m.id === editId);
+    mat = appData.materials.find(m => m.id === editId);
     if(mat){ Object.assign(mat, fields); }
   } else {
     const materialId = 'mat-' + (crypto.randomUUID ? crypto.randomUUID() : Date.now() + '-' + Math.random().toString(36).slice(2, 11));
-    appData.materials.push({ id: materialId, ...fields, history:[] });
+    mat = { id: materialId, ...fields, history:[] };
+    appData.materials.push(mat);
   }
   // Auto-add new category to the list if not already present
   if(fields.category && !appData.categories.includes(fields.category)){
@@ -1074,14 +1085,16 @@ function saveMaterial(){
   saveLocal();
   closeModal('addMaterialModal');
   showToast(editId ? '✅ Material updated' : '✅ Material added', 'success');
+  try{ await Cloud.pushData(editId ? 'updateMaterial' : 'createMaterial', mat); } catch(e){}
   renderInventory();
 }
 
-function deleteMaterial(mid){
+async function deleteMaterial(mid){
   if(!confirm('Delete this material?')) return;
   appData.materials = appData.materials.filter(m => m.id!==mid);
   saveLocal();
   showToast('🗑️ Deleted','warning');
+  try{ await Cloud.pushData('deleteMaterial',{materialId:mid}); } catch(e){}
   renderInventory();
 }
 function openStockModal(mid, action){
@@ -1096,7 +1109,7 @@ function openStockModal(mid, action){
   document.getElementById('stockDesc').textContent = `Material: ${mat.name} | Current: ${mat.stock||0} ${mat.unit||''}`;
   openModal('stockModal');
 }
-function confirmStockAdjust(){
+async function confirmStockAdjust(){
   const mid = document.getElementById('stockMatId').value;
   const action = document.getElementById('stockActionType').value;
   const qty = parseFloat(document.getElementById('stockQty').value)||0;
@@ -1113,6 +1126,7 @@ function confirmStockAdjust(){
   saveLocal();
   closeModal('stockModal');
   showToast('✅ Stock updated','success');
+  try{ await Cloud.pushData('updateMaterial', mat); } catch(e){}
   renderInventory();
 }
 function exportInventoryCSV(){
@@ -1152,7 +1166,7 @@ function renderCategoriesManager(){
     </div>`).join('');
 }
 
-function saveCategory(){
+async function saveCategory(){
   const input = document.getElementById('newCatName');
   const name = input ? input.value.trim() : '';
   if(!name){ showToast('❌ Category name required','error'); return; }
@@ -1163,6 +1177,7 @@ function saveCategory(){
   renderCategoriesManager();
   refreshCategoryDatalist();
   showToast('✅ Category added','success');
+  try{ await Cloud.pushData('saveCategories',{categories:appData.categories}); } catch(e){}
 }
 
 function startEditCategory(idx){
@@ -1193,7 +1208,7 @@ function cancelEditCategory(idx){
   if(cancelBtn) cancelBtn.classList.add('hidden');
 }
 
-function commitEditCategory(idx){
+async function commitEditCategory(idx){
   const inputEl = document.getElementById(`cat-edit-${idx}`);
   const newName = inputEl ? inputEl.value.trim() : '';
   if(!newName){ showToast('❌ Name cannot be empty','error'); return; }
@@ -1208,9 +1223,10 @@ function commitEditCategory(idx){
   renderCategoriesManager();
   refreshCategoryDatalist();
   showToast('✅ Category renamed','success');
+  try{ await Cloud.pushData('saveCategories',{categories:appData.categories}); } catch(e){}
 }
 
-function deleteCategory(idx){
+async function deleteCategory(idx){
   const name = appData.categories[idx];
   if(!confirm(`Delete category "${name}"? Materials using it won't be deleted.`)) return;
   appData.categories.splice(idx, 1);
@@ -1218,6 +1234,7 @@ function deleteCategory(idx){
   renderCategoriesManager();
   refreshCategoryDatalist();
   showToast('🗑️ Category deleted','warning');
+  try{ await Cloud.pushData('saveCategories',{categories:appData.categories}); } catch(e){}
 }
 
 // ========== MACHINES ==========
@@ -1272,7 +1289,7 @@ function openEditMachine(mid){
   document.getElementById('machineNotes').value = m.notes||'';
   openModal('addMachineModal');
 }
-function saveMachine(){
+async function saveMachine(){
   const editId = document.getElementById('machineEditId').value;
   const name = document.getElementById('machineName').value.trim();
   if(!name){ showToast('❌ Machine name is required','error'); return; }
@@ -1283,23 +1300,27 @@ function saveMachine(){
     status:   document.getElementById('machineStatus').value || 'active',
     notes:    document.getElementById('machineNotes').value.trim()
   };
+  let machine;
   if(editId){
-    const m = appData.machines.find(x => x.id===editId);
-    if(m){ Object.assign(m, fields); }
+    machine = appData.machines.find(x => x.id===editId);
+    if(machine){ Object.assign(machine, fields); }
   } else {
     const newMachineId = 'mach-' + (crypto.randomUUID ? crypto.randomUUID() : Date.now() + '-' + Math.random().toString(36).slice(2, 11));
-    appData.machines.push({ id: newMachineId, ...fields, totalSqft: 0, jobCount: 0 });
+    machine = { id: newMachineId, ...fields, totalSqft: 0, jobCount: 0 };
+    appData.machines.push(machine);
   }
   saveLocal();
   closeModal('addMachineModal');
   showToast(editId ? '✅ Machine updated' : '✅ Machine added', 'success');
+  try{ await Cloud.pushData(editId ? 'updateMachine' : 'createMachine', machine); } catch(e){}
   renderMachines();
 }
-function deleteMachine(mid){
+async function deleteMachine(mid){
   if(!confirm('Delete this machine?')) return;
   appData.machines = appData.machines.filter(m => m.id!==mid);
   saveLocal();
   showToast('🗑️ Machine deleted','warning');
+  try{ await Cloud.pushData('deleteMachine',{machineId:mid}); } catch(e){}
   renderMachines();
 }
 
@@ -1332,6 +1353,7 @@ async function saveSettings(){
   closeModal('settingsModal');
   showToast('✅ Settings saved','success');
   try{ await Cloud.pushData('saveSettings',{settings:appData.settings}); } catch(e){}
+  try{ await Cloud.pushData('savePins',{pins:appData.pins}); } catch(e){}
 }
 function switchSettingsTab(tab){
   document.querySelectorAll('.settings-tab').forEach((t,i) => {
