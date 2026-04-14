@@ -258,17 +258,77 @@
     <div class="modal-body">
       <input type="hidden" id="jobEditId">
       <div class="form-grid">
-        <div class="form-group"><label class="form-label">Client Name *</label><input type="text" class="form-input" id="jobClient" placeholder="Client name"></div>
-        <div class="form-group"><label class="form-label">Job Name *</label><input type="text" class="form-input" id="jobName" placeholder="Job description"></div>
-        <div class="form-group"><label class="form-label">Quantity</label><input type="number" class="form-input" id="jobQty" placeholder="0" min="0"></div>
-        <div class="form-group"><label class="form-label">Sq.Ft</label><input type="number" class="form-input" id="jobSqft" placeholder="0.00" step="0.01" min="0"></div>
-        <div class="form-group"><label class="form-label">Material</label><input type="text" class="form-input" id="jobMaterial" placeholder="Material type" list="materialsList"><datalist id="materialsList"></datalist></div>
-        <div class="form-group"><label class="form-label">Finish</label><input type="text" class="form-input" id="jobFinish" placeholder="e.g. Laminate, UV Coat"></div>
-        <div class="form-group"><label class="form-label">Priority</label><select class="form-input" id="jobPriority"><option value="low">🟢 Low</option><option value="medium" selected>🟡 Medium</option><option value="high">🔴 High</option></select></div>
-        <div class="form-group"><label class="form-label">Due Date</label><input type="date" class="form-input" id="jobDueDate"></div>
-        <div class="form-group"><label class="form-label">Approval By</label><input type="text" class="form-input" id="jobApprovalBy" placeholder="Approver name"></div>
-        <div class="form-group"><label class="form-label">File URL</label><input type="url" class="form-input" id="jobFileUrl" placeholder="https://..."></div>
-        <div class="form-group form-full"><label class="form-label">Notes</label><textarea class="form-input form-textarea" id="jobNotes" placeholder="Additional notes..."></textarea></div>
+        <div class="form-group">
+          <label class="form-label">Client Name *</label>
+          <div class="form-hint">Full name of the client or organisation placing this order.</div>
+          <input type="text" class="form-input" id="jobClient" placeholder="e.g. Acme Corp">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Job Name *</label>
+          <div class="form-hint">Short description of what is being produced.</div>
+          <input type="text" class="form-input" id="jobName" placeholder="e.g. Banner Roll 3×6 ft">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Quantity</label>
+          <div class="form-hint">Number of pieces / copies to produce.</div>
+          <input type="number" class="form-input" id="jobQty" placeholder="0" min="0">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Sq.Ft</label>
+          <div class="form-hint">Total print area in square feet (width × height).</div>
+          <input type="number" class="form-input" id="jobSqft" placeholder="0.00" step="0.01" min="0">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Material</label>
+          <div class="form-hint">Substrate to be printed on — type or start typing to see saved materials.</div>
+          <input type="text" class="form-input" id="jobMaterial" placeholder="e.g. Vinyl, Canvas, Flex" list="materialsList">
+          <datalist id="materialsList"></datalist>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Finish</label>
+          <div class="form-hint">Post-print treatment applied after printing.</div>
+          <input type="text" class="form-input" id="jobFinish" placeholder="e.g. Laminate, UV Coat, None">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Priority</label>
+          <div class="form-hint">Urgency level — High jobs are highlighted in red on the board.</div>
+          <select class="form-input" id="jobPriority">
+            <option value="low">🟢 Low — no rush</option>
+            <option value="medium" selected>🟡 Medium — normal</option>
+            <option value="high">🔴 High — urgent</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Due Date</label>
+          <div class="form-hint">Deadline by which this job must be completed and dispatched.</div>
+          <input type="date" class="form-input" id="jobDueDate">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Approval By</label>
+          <div class="form-hint">Name of person who reviewed and approved the design/proof.</div>
+          <input type="text" class="form-input" id="jobApprovalBy" placeholder="e.g. John (Sales)">
+        </div>
+        <div class="form-group form-full">
+          <label class="form-label">Design File</label>
+          <div class="form-hint">
+            Upload a file from your computer — it will be sent to the Google Drive folder configured in
+            <strong>Settings → Drive</strong> and the link is saved automatically. Or paste an existing Drive / cloud URL below.
+          </div>
+          <!-- File picker row -->
+          <div class="file-upload-wrap">
+            <input type="file" id="jobFileInput" class="file-input-hidden" accept="*/*" onchange="handleFileSelect(this)">
+            <button type="button" class="btn-secondary file-pick-btn" onclick="document.getElementById('jobFileInput').click()">&#128206; Choose File…</button>
+            <span class="file-name-display" id="fileNameDisplay">No file selected</span>
+          </div>
+          <div id="uploadStatus" class="upload-status"></div>
+          <!-- Manual URL fallback -->
+          <input type="url" class="form-input" id="jobFileUrl" placeholder="Or paste a Google Drive / cloud URL here…" style="margin-top:8px">
+        </div>
+        <div class="form-group form-full">
+          <label class="form-label">Notes</label>
+          <div class="form-hint">Any special instructions, colour specs, or delivery requirements.</div>
+          <textarea class="form-input form-textarea" id="jobNotes" placeholder="e.g. Use spot colours only; deliver to warehouse B…"></textarea>
+        </div>
       </div>
       <div class="modal-footer">
         <button class="btn-secondary" onclick="closeModal('jobModal')">Cancel</button>

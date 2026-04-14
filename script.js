@@ -554,7 +554,54 @@ async function saveNotes(jid){
   renderDashboard();
 }
 
-// ========== JOB CRUD ==========
+// ========== FILE UPLOAD TO GOOGLE DRIVE ==========
+function handleFileSelect(input){
+  const file = input.files[0];
+  const display = document.getElementById('fileNameDisplay');
+  const status  = document.getElementById('uploadStatus');
+  if(display) display.textContent = file ? file.name : 'No file selected';
+  if(status){ status.textContent = ''; status.className = 'upload-status'; }
+}
+
+async function uploadFileToDrive(file){
+  const folderId = (appData.settings.driveFolderId||'').trim();
+  if(!folderId){
+    showToast('⚠️ No Drive Folder ID set — go to Settings → Drive to configure it.','warning', 6000);
+    return null;
+  }
+  const statusEl = document.getElementById('uploadStatus');
+  if(statusEl){ statusEl.textContent = '⏳ Uploading to Drive…'; statusEl.className = 'upload-status uploading'; }
+  return new Promise(resolve => {
+    const reader = new FileReader();
+    reader.onload = async function(e){
+      const base64 = e.target.result.split(',')[1];
+      try{
+        const resp = await Cloud.pushData('uploadFile', {
+          fileName: file.name,
+          mimeType: file.type || 'application/octet-stream',
+          content:  base64,
+          folderId
+        });
+        if(resp && resp.url){
+          if(statusEl){ statusEl.textContent = '✅ Uploaded successfully!'; statusEl.className = 'upload-status uploaded'; }
+          resolve(resp.url);
+        } else {
+          const msg = (resp && resp.error) ? resp.error : 'Apps Script did not return a URL';
+          if(statusEl){ statusEl.textContent = '❌ ' + msg; statusEl.className = 'upload-status error'; }
+          showToast('❌ Drive upload failed: ' + msg,'error');
+          resolve(null);
+        }
+      } catch(err){
+        if(statusEl){ statusEl.textContent = '❌ Network error during upload'; statusEl.className = 'upload-status error'; }
+        showToast('❌ Upload error: ' + err.message,'error');
+        resolve(null);
+      }
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+
 function openJobModal(job){
   document.getElementById('jobModalTitle').textContent = job ? '✏️ Edit Job' : '✚ New Job';
   document.getElementById('jobEditId').value = job ? job.id : '';
@@ -568,6 +615,13 @@ function openJobModal(job){
   document.getElementById('jobDueDate').value   = job ? (job.dueDate||'') : '';
   document.getElementById('jobApprovalBy').value= job ? (job.approvalBy||'') : '';
   document.getElementById('jobFileUrl').value   = job ? (job.fileUrl||job.files||'') : '';
+  // Reset file upload widget
+  const fi = document.getElementById('jobFileInput');
+  if(fi) fi.value = '';
+  const fnd = document.getElementById('fileNameDisplay');
+  if(fnd) fnd.textContent = (job && (job.fileUrl||job.files)) ? '(existing file — replace by choosing a new one)' : 'No file selected';
+  const us = document.getElementById('uploadStatus');
+  if(us){ us.textContent = ''; us.className = 'upload-status'; }
   document.getElementById('jobNotes').value     = job ? (job.notes||'') : '';
   // Populate material datalist
   const dl = document.getElementById('materialsList');
@@ -583,6 +637,17 @@ async function saveJob(){
   const client = document.getElementById('jobClient').value.trim();
   const name   = document.getElementById('jobName').value.trim();
   if(!client || !name){ showToast('❌ Client and Job Name are required','error'); return; }
+
+  // Handle file upload first (if a local file was chosen)
+  const fileInput = document.getElementById('jobFileInput');
+  if(fileInput && fileInput.files[0]){
+    const uploadedUrl = await uploadFileToDrive(fileInput.files[0]);
+    if(uploadedUrl){
+      document.getElementById('jobFileUrl').value = uploadedUrl;
+    }
+    // If upload failed the user can still save with the existing / manual URL
+  }
+
   const isEdit = !!editId;
   let job;
   if(isEdit){

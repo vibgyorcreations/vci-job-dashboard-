@@ -905,6 +905,36 @@ body::before {
   display:flex; gap:4px;
 }
 
+/* ========== FORM HINTS ========== */
+.form-hint {
+  font-size:11px; color:var(--text-muted); line-height:1.45;
+  margin-bottom:4px; padding-left:2px;
+}
+.form-hint strong { color:var(--text); }
+
+/* ========== FILE UPLOAD ========== */
+.file-upload-wrap {
+  display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+  padding:8px 10px; border:1px dashed var(--glass-border); border-radius:9px;
+  background:rgba(255,255,255,0.03); transition:border-color .2s;
+}
+.file-upload-wrap:hover { border-color:var(--primary); }
+.file-input-hidden { display:none; }
+.file-pick-btn {
+  padding:7px 14px; font-size:12px; white-space:nowrap; flex-shrink:0;
+}
+.file-name-display {
+  flex:1; font-size:12px; color:var(--text-muted); font-style:italic;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  min-width:0;
+}
+.upload-status {
+  font-size:12px; padding:4px 0; min-height:18px; font-weight:600;
+}
+.upload-status.uploading { color:var(--warning); }
+.upload-status.uploaded  { color:var(--success); }
+.upload-status.error     { color:var(--danger); }
+
 /* Machine notes */
 .machine-notes {
   font-size:12px; color:var(--text-muted); margin:6px 0 2px;
