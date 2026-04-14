@@ -118,7 +118,7 @@
       </div>
       <div class="header-right">
         <button class="btn-icon-header" onclick="loadData()" title="Refresh">🔄</button>
-        <button class="btn-icon-header" onclick="openModal('settingsModal');loadSettingsForm()" title="Settings">⚙️</button>
+        <button class="btn-icon-header" id="headerSettingsBtn" onclick="openModal('settingsModal');loadSettingsForm()" title="Settings">⚙️</button>
         <button class="btn-icon-header" onclick="toggleTheme()" id="themeBtn" title="Toggle theme">🌙</button>
         <div class="system-clock" id="systemClock">--:--:--</div>
       </div>
@@ -158,19 +158,19 @@
         <div class="sync-status"><span class="sync-dot" id="syncDot"></span><span id="lastSyncTime">Not synced</span></div>
       </div>
       <div class="kanban" id="kanbanBoard">
-        <div class="kanban-col">
+        <div class="kanban-col" id="kanbanColWaiting">
           <div class="col-header col-waiting-h"><span class="col-dot"></span><span class="col-title">Waiting</span><span class="col-count" id="colCountWaiting">0</span></div>
           <div class="jobs-list" id="listWaiting"></div>
         </div>
-        <div class="kanban-col">
+        <div class="kanban-col" id="kanbanColPrinting">
           <div class="col-header col-printing-h"><span class="col-dot"></span><span class="col-title">Printing</span><span class="col-count" id="colCountPrinting">0</span></div>
           <div class="jobs-list" id="listPrinting"></div>
         </div>
-        <div class="kanban-col">
+        <div class="kanban-col" id="kanbanColAssembly">
           <div class="col-header col-assembly-h"><span class="col-dot"></span><span class="col-title">Assembly</span><span class="col-count" id="colCountAssembly">0</span></div>
           <div class="jobs-list" id="listAssembly"></div>
         </div>
-        <div class="kanban-col">
+        <div class="kanban-col" id="kanbanColDispatch">
           <div class="col-header col-dispatch-h"><span class="col-dot"></span><span class="col-title">Dispatch</span><span class="col-count" id="colCountDispatch">0</span></div>
           <div class="jobs-list" id="listDispatch"></div>
         </div>
@@ -213,9 +213,9 @@
       <div class="view-header">
         <h2 class="view-title">📦 Inventory</h2>
         <div class="view-actions">
-          <button class="btn-primary" onclick="openMaterialModal()">&#10010; Add Material</button>
-          <button class="btn-secondary" onclick="openManageCategoriesModal()">🏷️ Categories</button>
-          <button class="btn-secondary" onclick="exportInventoryCSV()">&#11015; CSV</button>
+          <button class="btn-primary" id="invAddMaterialBtn" onclick="openMaterialModal()">&#10010; Add Material</button>
+          <button class="btn-secondary" id="invCategoriesBtn" onclick="openManageCategoriesModal()">🏷️ Categories</button>
+          <button class="btn-secondary" id="invCsvBtn" onclick="exportInventoryCSV()">&#11015; CSV</button>
         </div>
       </div>
       <div id="lowStockAlerts"></div>

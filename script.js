@@ -28,13 +28,28 @@ const SESSION_WARN     = 12 * 60 * 1000; // warn at 12 min mark (3 min before ti
 
 // ========== PERMISSIONS ==========
 const ROLE_PERMISSIONS = {
-  admin:    { canCreateJob:true, canMoveToPrinting:true, canMoveToAssembly:true, canMoveToDispatch:true, canArchive:true, canDeleteJob:true, canManageInventory:true, canManageMachines:true, canManageSettings:true, canViewDashboard:true },
-  waiting:  { canCreateJob:true, canViewDashboard:true },
-  printing: { canMoveToPrinting:true, canViewDashboard:true },
-  assembly: { canMoveToAssembly:true, canViewDashboard:true },
-  dispatch: { canMoveToDispatch:true, canArchive:true, canViewDashboard:true }
+  admin:    {
+    canCreateJob:true, canEditJob:true, canDeleteJob:true, canDuplicateJob:true, canSplitJob:true,
+    canMoveToPrinting:true, canMoveToAssembly:true, canMoveToDispatch:true, canArchive:true,
+    canManageInventory:true, canManageMachines:true, canManageSettings:true,
+    canViewDashboard:true, canViewArchive:true, canViewAnalytics:true, canViewInventory:true, canViewMachines:true,
+    canStockIn:true, canStockOut:true, canStockAdjust:true
+  },
+  waiting:  { canCreateJob:true, canViewDashboard:true, canViewInventory:true },
+  printing: { canMoveToPrinting:true, canViewDashboard:true, canViewInventory:true, canStockOut:true },
+  assembly: { canMoveToAssembly:true, canViewDashboard:true, canViewInventory:true, canStockOut:true },
+  dispatch: { canMoveToDispatch:true, canArchive:true, canViewDashboard:true, canViewArchive:true }
 };
 function can(perm){ return !!(currentRole && ROLE_PERMISSIONS[currentRole] && ROLE_PERMISSIONS[currentRole][perm]); }
+
+// Columns each role can see on the Kanban board
+const ROLE_COLUMNS = {
+  admin:    ['waiting','printing','assembly','dispatch'],
+  waiting:  ['waiting'],
+  printing: ['printing'],
+  assembly: ['assembly'],
+  dispatch: ['dispatch']
+};
 
 // ========== CLOUD SYNC ==========
 const Cloud = {
@@ -281,6 +296,11 @@ function renderCurrentView(){
 }
 
 function switchView(v){
+  // Guard: prevent non-admin from navigating to views they don't have access to
+  const viewPerms = { archive:'canViewArchive', analytics:'canViewAnalytics', inventory:'canViewInventory', machines:'canViewMachines' };
+  if(viewPerms[v] && !can(viewPerms[v])){
+    showToast('⛔ Access denied','error'); return;
+  }
   currentView = v;
   document.querySelectorAll('.view').forEach(el => { el.classList.remove('active'); el.classList.add('hidden'); });
   document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
@@ -306,9 +326,56 @@ function updateFab(){
 }
 
 function applyRoleUI(){
+  // New Job button & FAB — waiting and admin only
   const nb = document.getElementById('newJobBtn');
   if(nb) nb.style.display = can('canCreateJob') ? '' : 'none';
   updateFab();
+
+  // Settings button in header — admin only
+  const settBtn = document.getElementById('headerSettingsBtn');
+  if(settBtn) settBtn.style.display = can('canManageSettings') ? '' : 'none';
+
+  // Sidebar nav items — hide views the role cannot access
+  const navPerms = { archive:'canViewArchive', analytics:'canViewAnalytics', inventory:'canViewInventory', machines:'canViewMachines' };
+  Object.entries(navPerms).forEach(([view, perm]) => {
+    const navEl = document.querySelector('[data-view="'+view+'"]');
+    if(navEl) navEl.style.display = can(perm) ? '' : 'none';
+  });
+
+  // Kanban columns — show only the column(s) this role owns
+  const visibleCols = ROLE_COLUMNS[currentRole] || ['waiting'];
+  ['waiting','printing','assembly','dispatch'].forEach(col => {
+    const colName = col.charAt(0).toUpperCase() + col.slice(1);
+    const el = document.getElementById('kanbanCol'+colName);
+    if(el) el.style.display = visibleCols.includes(col) ? '' : 'none';
+  });
+
+  // KPI cards — non-admin roles see only their own stage KPI; hide irrelevant ones
+  const kpiMap = { waiting:'kpiWaiting', printing:'kpiPrinting', assembly:'kpiAssembly', dispatch:'kpiDispatch' };
+  if(currentRole !== 'admin'){
+    // Hide every stage KPI except the one matching the role, and hide total/sqft/urgent
+    ['kpiTotal','kpiWaiting','kpiPrinting','kpiAssembly','kpiDispatch','kpiSqft','kpiUrgent'].forEach(id => {
+      const el = document.getElementById(id);
+      if(!el) return;
+      const kpiCard = el.closest('.kpi-card');
+      if(!kpiCard) return;
+      const ownKpi = kpiMap[currentRole];
+      if(id === ownKpi) {
+        kpiCard.style.display = '';
+      } else {
+        kpiCard.style.display = 'none';
+      }
+    });
+  } else {
+    // Admin sees all KPI cards
+    document.querySelectorAll('.kpi-card').forEach(el => el.style.display = '');
+  }
+
+  // Inventory action buttons in header — admin only
+  ['invAddMaterialBtn','invCategoriesBtn','invCsvBtn'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.style.display = can('canManageInventory') ? '' : 'none';
+  });
 }
 
 // ========== KPI ==========
@@ -408,9 +475,9 @@ function jobCardHTML(job, colStatus){
   else if(colStatus==='dispatch' && can('canArchive'))
     mainBtn = '<button class="job-act-btn btn-archive" onclick="openDispatchModal(\''+jid+'\')">📦 Archive</button>';
 
-  const editBtn = can('canCreateJob') ? '<button class="job-act-btn btn-edit-card" onclick="editJob(\''+jid+'\')">✏️</button>' : '';
-  const dupBtn  = can('canCreateJob') ? '<button class="job-act-btn btn-dup" onclick="duplicateJob(\''+jid+'\')">⎘</button>' : '';
-  const splitBtn = can('canCreateJob') ? '<button class="job-act-btn btn-split-c" onclick="openSplit(\''+jid+'\')">✂️</button>' : '';
+  const editBtn = can('canEditJob')      ? '<button class="job-act-btn btn-edit-card" onclick="editJob(\''+jid+'\')">✏️</button>' : '';
+  const dupBtn  = can('canDuplicateJob') ? '<button class="job-act-btn btn-dup" onclick="duplicateJob(\''+jid+'\')">⎘</button>' : '';
+  const splitBtn = can('canSplitJob')    ? '<button class="job-act-btn btn-split-c" onclick="openSplit(\''+jid+'\')">✂️</button>' : '';
   const pinBtn  = '<button class="job-act-btn btn-pin-c" onclick="togglePin(\''+jid+'\')" title="Pin/Unpin">📌</button>';
   const rwBtn   = '<button class="job-act-btn btn-rework-c" onclick="toggleRework(\''+jid+'\')" title="Toggle Rework">🔄</button>';
   const tlBtn   = '<button class="job-act-btn btn-timeline" onclick="openTimeline(\''+jid+'\')">📜</button>';
@@ -838,6 +905,13 @@ function renderInventory(){
   tbody.innerHTML = appData.materials.map(m => {
     const isLow = (m.stock||0) <= (m.lowAt||5);
     const badge = isLow ? '<span class="badge badge-high" style="margin-left:4px">LOW</span>' : '<span class="badge badge-low">OK</span>';
+    // Build action buttons based on role
+    const editBtn   = can('canManageInventory') ? `<button class="btn-icon" title="Edit material" onclick="openMaterialModal('${escHtml(m.id)}')">✏️</button>` : '';
+    const stockInBtn = can('canStockIn')         ? `<button class="btn-icon" onclick="openStockModal('${escHtml(m.id)}','in')">+In</button>` : '';
+    const stockOutBtn = can('canStockOut')        ? `<button class="btn-icon" onclick="openStockModal('${escHtml(m.id)}','out')" style="margin:0 4px">-Out</button>` : '';
+    const adjustBtn  = can('canStockAdjust')     ? `<button class="btn-icon" onclick="openStockModal('${escHtml(m.id)}','adjust')">±Adj</button>` : '';
+    const deleteBtn  = can('canManageInventory') ? `<button class="btn-icon" onclick="deleteMaterial('${escHtml(m.id)}')" style="color:var(--danger)">🗑️</button>` : '';
+    const anyAction = editBtn || stockInBtn || stockOutBtn || adjustBtn || deleteBtn;
     return `<tr>
       <td><strong>${escHtml(m.name)}</strong></td>
       <td>${escHtml(m.category||'-')}</td>
@@ -845,13 +919,7 @@ function renderInventory(){
       <td>${escHtml(m.unit||'-')}</td>
       <td>${m.lowAt||5}</td>
       <td>${badge}</td>
-      <td>
-        <button class="btn-icon" title="Edit material" onclick="openMaterialModal('${escHtml(m.id)}')">✏️</button>
-        <button class="btn-icon" onclick="openStockModal('${escHtml(m.id)}','in')">+In</button>
-        <button class="btn-icon" onclick="openStockModal('${escHtml(m.id)}','out')" style="margin:0 4px">-Out</button>
-        <button class="btn-icon" onclick="openStockModal('${escHtml(m.id)}','adjust')">±Adj</button>
-        <button class="btn-icon" onclick="deleteMaterial('${escHtml(m.id)}')" style="color:var(--danger)">🗑️</button>
-      </td>
+      <td>${anyAction || '<span style="color:var(--text-muted);font-size:12px">View only</span>'}</td>
     </tr>`;
   }).join('');
 }
@@ -1220,7 +1288,7 @@ function handleKeyboard(e){
     if(e.key==='f'||e.key==='F'){ e.preventDefault(); const gs=document.getElementById('globalSearch'); if(gs) gs.focus(); return; }
   }
   const views = ['','dashboard','archive','analytics','inventory','machines'];
-  if(e.key>='1'&&e.key<='5' && !e.ctrlKey && !e.metaKey){ switchView(views[parseInt(e.key)]); }
+  if(e.key>='1'&&e.key<='5' && !e.ctrlKey && !e.metaKey){ const v=views[parseInt(e.key)]; if(v) switchView(v); }
 }
 
 // ========== TOAST ==========
