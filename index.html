@@ -211,17 +211,21 @@
     <!-- INVENTORY VIEW -->
     <div id="viewInventory" class="view hidden">
       <div class="view-header">
-        <h2 class="view-title">📦 Inventory</h2>
+        <h2 class="view-title">&#128230; Inventory</h2>
         <div class="view-actions">
+          <div class="search-wrap" style="min-width:200px">
+            <span class="search-icon-h">&#128269;</span>
+            <input type="text" id="invSearch" class="global-search" placeholder="Search materials…" oninput="renderInventory()" />
+          </div>
           <button class="btn-primary" id="invAddMaterialBtn" onclick="openMaterialModal()">&#10010; Add Material</button>
-          <button class="btn-secondary" id="invCategoriesBtn" onclick="openManageCategoriesModal()">🏷️ Categories</button>
+          <button class="btn-secondary" id="invCategoriesBtn" onclick="openManageCategoriesModal()">&#127991;&#65039; Categories</button>
           <button class="btn-secondary" id="invCsvBtn" onclick="exportInventoryCSV()">&#11015; CSV</button>
         </div>
       </div>
       <div id="lowStockAlerts"></div>
       <div class="glass table-wrap">
         <table class="data-table">
-          <thead><tr><th>Material</th><th>Category</th><th>Stock</th><th>Unit</th><th>Low Alert</th><th>Status</th><th>Actions</th></tr></thead>
+          <thead><tr><th>Material</th><th>Category</th><th>Stock</th><th>Unit</th><th>Low Alert</th><th>Status</th><th id="invCostHeader">Cost</th><th>Actions</th></tr></thead>
           <tbody id="inventoryBody"></tbody>
         </table>
       </div>

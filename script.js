@@ -349,6 +349,12 @@ function applyRoleUI(){
     const el = document.getElementById('kanbanCol'+colName);
     if(el) el.style.display = visibleCols.includes(col) ? '' : 'none';
   });
+  // Expand to full width when only one column is visible
+  const kanban = document.getElementById('kanbanBoard');
+  if(kanban){
+    if(visibleCols.length === 1) kanban.classList.add('kanban-single');
+    else kanban.classList.remove('kanban-single');
+  }
 
   // KPI cards — non-admin roles see only their own stage KPI; hide irrelevant ones
   const kpiMap = { waiting:'kpiWaiting', printing:'kpiPrinting', assembly:'kpiAssembly', dispatch:'kpiDispatch' };
@@ -498,7 +504,7 @@ function jobCardHTML(job, colStatus){
     <div class="job-field"><strong>Qty:</strong> ${qty}&nbsp;&nbsp;<strong>Sq.Ft:</strong> ${sqft}</div>
     <div class="job-field"><strong>Material:</strong> ${mat}${finish?' &nbsp;|&nbsp; <strong>Finish:</strong> '+finish:''}</div>
     ${approvalBy ? '<div class="job-field"><strong>Approval:</strong> '+approvalBy+'</div>' : ''}
-    ${fileUrl ? '<div class="job-field"><a href="'+fileUrl+'" target="_blank" style="color:var(--primary);font-size:11px;">�� View File</a></div>' : ''}
+    ${fileUrl ? '<div class="job-field"><a href="'+fileUrl+'" target="_blank" style="color:var(--primary);font-size:11px;">&#128206; View File</a></div>' : ''}
     <div class="job-notes-wrap">
       <div class="notes-label">Notes</div>
       <div class="notes-text" onclick="editNotes('${jid}')" id="ntext-${jid}">${notes||'Click to add notes…'}</div>
@@ -916,20 +922,35 @@ function renderInventory(){
   refreshCategoryDatalist();
   const alerts = document.getElementById('lowStockAlerts');
   const low = appData.materials.filter(m => (m.stock||0) <= (m.lowAt||5));
-  if(alerts) alerts.innerHTML = low.map(m => `<div class="low-alert">⚠️ ${escHtml(m.name)}: ${m.stock} ${escHtml(m.unit||'')} remaining</div>`).join('');
+  if(alerts) alerts.innerHTML = low.map(m => `<div class="low-alert">&#9888;&#65039; ${escHtml(m.name)}: ${m.stock} ${escHtml(m.unit||'')} remaining</div>`).join('');
+
+  // Search filter
+  const q = ((document.getElementById('invSearch')||{}).value||'').toLowerCase().trim();
+  const materials = q
+    ? appData.materials.filter(m => (m.name||'').toLowerCase().includes(q) || (m.category||'').toLowerCase().includes(q))
+    : appData.materials;
+
   const tbody = document.getElementById('inventoryBody');
   if(!tbody) return;
-  if(!appData.materials.length){ tbody.innerHTML='<tr><td colspan="7" class="no-data">No materials added yet</td></tr>'; return; }
-  tbody.innerHTML = appData.materials.map(m => {
+
+  // Cost column — admin only
+  const showCost = can('canManageInventory');
+  const costHeader = document.getElementById('invCostHeader');
+  if(costHeader) costHeader.style.display = showCost ? '' : 'none';
+
+  const colSpan = showCost ? 8 : 7;
+  if(!materials.length){ tbody.innerHTML=`<tr><td colspan="${colSpan}" class="no-data">No materials added yet</td></tr>`; return; }
+  tbody.innerHTML = materials.map(m => {
     const isLow = (m.stock||0) <= (m.lowAt||5);
     const badge = isLow ? '<span class="badge badge-high" style="margin-left:4px">LOW</span>' : '<span class="badge badge-low">OK</span>';
     // Build action buttons based on role
-    const editBtn   = can('canManageInventory') ? `<button class="btn-icon" title="Edit material" onclick="openMaterialModal('${escHtml(m.id)}')">✏️</button>` : '';
-    const stockInBtn = can('canStockIn')         ? `<button class="btn-icon" onclick="openStockModal('${escHtml(m.id)}','in')">+In</button>` : '';
-    const stockOutBtn = can('canStockOut')        ? `<button class="btn-icon" onclick="openStockModal('${escHtml(m.id)}','out')" style="margin:0 4px">-Out</button>` : '';
-    const adjustBtn  = can('canStockAdjust')     ? `<button class="btn-icon" onclick="openStockModal('${escHtml(m.id)}','adjust')">±Adj</button>` : '';
-    const deleteBtn  = can('canManageInventory') ? `<button class="btn-icon" onclick="deleteMaterial('${escHtml(m.id)}')" style="color:var(--danger)">🗑️</button>` : '';
+    const editBtn    = can('canManageInventory') ? `<button class="btn-icon" title="Edit" onclick="openMaterialModal('${escHtml(m.id)}')">&#9999;&#65039;</button>` : '';
+    const stockInBtn  = can('canStockIn')  ? `<button class="btn-icon" onclick="openStockModal('${escHtml(m.id)}','in')">+In</button>` : '';
+    const stockOutBtn = can('canStockOut') ? `<button class="btn-icon" onclick="openStockModal('${escHtml(m.id)}','out')" style="margin:0 4px">-Out</button>` : '';
+    const adjustBtn   = can('canStockAdjust') ? `<button class="btn-icon" onclick="openStockModal('${escHtml(m.id)}','adjust')">&#177;Adj</button>` : '';
+    const deleteBtn   = can('canManageInventory') ? `<button class="btn-icon" onclick="deleteMaterial('${escHtml(m.id)}')" title="Delete" style="color:var(--danger)">&#128465;&#65039;</button>` : '';
     const anyAction = editBtn || stockInBtn || stockOutBtn || adjustBtn || deleteBtn;
+    const costCell = showCost ? `<td style="color:var(--success);font-weight:700">&#8377;${(m.cost||0).toFixed(2)}</td>` : '';
     return `<tr>
       <td><strong>${escHtml(m.name)}</strong></td>
       <td>${escHtml(m.category||'-')}</td>
@@ -937,6 +958,7 @@ function renderInventory(){
       <td>${escHtml(m.unit||'-')}</td>
       <td>${m.lowAt||5}</td>
       <td>${badge}</td>
+      ${costCell}
       <td>${anyAction || '<span style="color:var(--text-muted);font-size:12px">View only</span>'}</td>
     </tr>`;
   }).join('');
