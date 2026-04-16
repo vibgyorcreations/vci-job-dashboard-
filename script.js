@@ -25,7 +25,7 @@ let sessionWarnTimer = null;
 let printJobId   = null;
 let clockTimer   = null;
 let selectedMaterials = [];   // multi-material picker state
-let invStockFilter = 'all';   // inventory tab filter state
+let invStockFilter = 'all';   // inventory tab filter: 'all' | 'instock' | 'low' | 'out'
 const SESSION_TIMEOUT  = 15 * 60 * 1000; // 15 min inactivity → logout
 const SESSION_WARN     = 12 * 60 * 1000; // warn at 12 min mark (3 min before timeout)
 
