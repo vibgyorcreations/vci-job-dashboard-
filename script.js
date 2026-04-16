@@ -10,6 +10,7 @@ let appData = {
   materials: [],
   machines: [],
   categories: [],
+  notifications: [],
   settings: { companyName:'FactoryFlow OS', companyLogo:'', driveFolderId:'', theme:'dark', accentColor:'#00f0ff' },
   pins: { admin:'1234', waiting:'1111', printing:'2222', assembly:'3333', dispatch:'4444' }
 };
@@ -23,6 +24,8 @@ let sessionTimer = null;
 let sessionWarnTimer = null;
 let printJobId   = null;
 let clockTimer   = null;
+let selectedMaterials = [];   // multi-material picker state
+let invStockFilter = 'all';   // inventory tab filter state
 const SESSION_TIMEOUT  = 15 * 60 * 1000; // 15 min inactivity → logout
 const SESSION_WARN     = 12 * 60 * 1000; // warn at 12 min mark (3 min before timeout)
 
@@ -81,12 +84,14 @@ function loadLocal(){
       if(parsed.materials) appData.materials = parsed.materials;
       if(parsed.machines && parsed.machines.length) appData.machines = parsed.machines;
       if(parsed.categories) appData.categories = parsed.categories;
+      if(parsed.notifications) appData.notifications = parsed.notifications;
       if(parsed.settings)  Object.assign(appData.settings, parsed.settings);
       if(parsed.pins)      Object.assign(appData.pins, parsed.pins);
     }
   } catch(e){}
   if(!appData.machines || !appData.machines.length) appData.machines = defaultMachines();
   if(!appData.categories) appData.categories = [];
+  if(!appData.notifications) appData.notifications = [];
 }
 function defaultMachines(){
   return [
@@ -386,6 +391,11 @@ function applyRoleUI(){
     const el = document.getElementById(id);
     if(el) el.style.display = can('canManageInventory') ? '' : 'none';
   });
+
+  // Notification bell — admin only
+  const notifWrap = document.getElementById('notifWrap');
+  if(notifWrap) notifWrap.style.display = (currentRole === 'admin') ? '' : 'none';
+  updateNotifBadge();
 }
 
 // ========== KPI ==========
@@ -417,7 +427,8 @@ function getFilteredJobs(){
   const pf = (document.getElementById('filterPriority')||{}).value||'';
   const sf = (document.getElementById('filterStatus')||{}).value||'';
   return appData.jobs.filter(j => {
-    const matchQ = !q || [j.id,j.name,j.client,j.material,j.materials,j.notes].some(v => v&&v.toLowerCase().includes(q));
+    const matStr = Array.isArray(j.materials) ? j.materials.join(' ') : (j.materials||j.material||'');
+    const matchQ = !q || [j.id,j.name,j.client,matStr,j.notes].some(v => v&&v.toLowerCase().includes(q));
     const matchP = !pf || (j.priority||'').toLowerCase()===pf;
     const matchS = !sf || j.status===sf;
     return matchQ && matchP && matchS;
@@ -458,7 +469,11 @@ function jobCardHTML(job, colStatus){
   const id = escHtml(job.id||'');
   const name = escHtml(job.name||'-');
   const client = escHtml(job.client||'-');
-  const mat = escHtml(job.material||job.materials||'-');
+  // Support both array and string forms of materials
+  const matArr = Array.isArray(job.materials) ? job.materials : (job.materials||job.material||'').split(',').map(s=>s.trim()).filter(Boolean);
+  const matDisplay = matArr.length
+    ? matArr.map(m => `<span class="mat-tag" style="font-size:11px;padding:2px 8px 2px 10px">${escHtml(m)}</span>`).join('')
+    : '<span style="color:var(--text-muted)">—</span>';
   const qty = escHtml(String(job.qty||job.quantity||'-'));
   const sqft = escHtml(String(job.sqft||job.size||'-'));
   const finish = escHtml(job.finish||job.finishing||'');
@@ -506,7 +521,7 @@ function jobCardHTML(job, colStatus){
     <div class="job-field"><strong>Client:</strong> ${client}</div>
     <div class="job-field"><strong>Job:</strong> ${name}</div>
     <div class="job-field"><strong>Qty:</strong> ${qty}&nbsp;&nbsp;<strong>Sq.Ft:</strong> ${sqft}</div>
-    <div class="job-field"><strong>Material:</strong> ${mat}${finish?' &nbsp;|&nbsp; <strong>Finish:</strong> '+finish:''}</div>
+    <div class="job-field"><strong>Material:</strong> <span style="display:inline-flex;flex-wrap:wrap;gap:4px;vertical-align:middle">${matDisplay}</span>${finish?' &nbsp;|&nbsp; <strong>Finish:</strong> '+finish:''}</div>
     ${approvalBy ? '<div class="job-field"><strong>Approval:</strong> '+approvalBy+'</div>' : ''}
     ${fileUrl ? '<div class="job-field"><a href="'+fileUrl+'" target="_blank" style="color:var(--primary);font-size:11px;">&#128206; View File</a></div>' : ''}
     <div class="job-notes-wrap">
@@ -523,6 +538,155 @@ function jobCardHTML(job, colStatus){
 }
 
 function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+
+// ========== MULTI-MATERIAL PICKER ==========
+function renderMaterialTags(){
+  const container = document.getElementById('selectedMaterialTags');
+  if(!container) return;
+  if(!selectedMaterials.length){ container.innerHTML=''; return; }
+  container.innerHTML = selectedMaterials.map((m,i) =>
+    `<span class="mat-tag">${escHtml(m)}<button type="button" onclick="removeMaterial(${i})" tabindex="-1">×</button></span>`
+  ).join('');
+}
+function removeMaterial(idx){
+  selectedMaterials.splice(idx,1);
+  renderMaterialTags();
+}
+function addMaterialToJob(name){
+  const n = name.trim();
+  if(!n) return;
+  if(!selectedMaterials.includes(n)) selectedMaterials.push(n);
+  renderMaterialTags();
+  const inp = document.getElementById('matPickerSearch');
+  if(inp) inp.value='';
+  hideMatDropdown();
+}
+function filterMatPicker(){
+  const q = (document.getElementById('matPickerSearch').value||'').toLowerCase().trim();
+  const dropdown = document.getElementById('matPickerDropdown');
+  if(!dropdown) return;
+  const matches = appData.materials.filter(m =>
+    !q || (m.name||'').toLowerCase().includes(q) || (m.category||'').toLowerCase().includes(q)
+  );
+  if(!matches.length && !q){ hideMatDropdown(); return; }
+  dropdown.classList.remove('hidden');
+  const items = matches.map(m => {
+    const isOut = (m.stock||0) === 0;
+    const isLow = !isOut && (m.stock||0) <= (m.lowAt||5);
+    const cls   = isOut ? 'stock-out' : isLow ? 'stock-low' : '';
+    const stockLabel = isOut ? '🔴 Out of stock' : isLow ? `⚠️ ${m.stock} ${m.unit||''}` : `✅ ${m.stock} ${m.unit||''}`;
+    return `<div class="mat-picker-option ${cls}" onclick="addMaterialToJob('${escHtml(m.name)}')">
+      <span class="mat-opt-name">${escHtml(m.name)}${m.category?'<span style="color:var(--text-muted);font-size:11px"> · '+escHtml(m.category)+'</span>':''}</span>
+      <span class="mat-opt-stock">${stockLabel}</span>
+    </div>`;
+  });
+  // Add "use custom" option if query doesn't exactly match an existing material
+  if(q && !appData.materials.some(m=>(m.name||'').toLowerCase()===q)){
+    items.push(`<div class="mat-picker-option" onclick="addMaterialToJob('${escHtml(document.getElementById('matPickerSearch').value.trim())}')">
+      <span class="mat-opt-name">✚ Add "<strong>${escHtml(document.getElementById('matPickerSearch').value.trim())}</strong>" as custom</span>
+    </div>`);
+  }
+  if(!items.length){
+    dropdown.innerHTML='<div class="mat-picker-empty">No materials found — type to add a custom one.</div>';
+  } else {
+    dropdown.innerHTML = items.join('');
+  }
+}
+function showMatDropdown(){
+  filterMatPicker();
+}
+function hideMatDropdown(){
+  const dropdown = document.getElementById('matPickerDropdown');
+  if(dropdown) dropdown.classList.add('hidden');
+}
+function matPickerKeydown(e){
+  if(e.key==='Enter'){
+    e.preventDefault();
+    const val = (document.getElementById('matPickerSearch').value||'').trim();
+    if(val) addMaterialToJob(val);
+  } else if(e.key==='Escape'){
+    hideMatDropdown();
+  }
+}
+// Close mat dropdown when clicking outside
+document.addEventListener('click', e => {
+  const wrap = document.getElementById('matPickerWrap');
+  if(wrap && !wrap.contains(e.target)) hideMatDropdown();
+});
+
+// ========== NOTIFICATIONS ==========
+function addNotification(message, jobId){
+  if(!appData.notifications) appData.notifications = [];
+  appData.notifications.unshift({
+    id: 'n-'+Date.now(),
+    message,
+    jobId: jobId||'',
+    timestamp: new Date().toISOString(),
+    read: false
+  });
+  // Keep last 50 notifications
+  if(appData.notifications.length > 50) appData.notifications.length = 50;
+  saveLocal();
+  updateNotifBadge();
+}
+function updateNotifBadge(){
+  const badge = document.getElementById('notifBadge');
+  if(!badge) return;
+  const unread = (appData.notifications||[]).filter(n => !n.read).length;
+  badge.textContent = unread > 99 ? '99+' : String(unread);
+  badge.classList.toggle('hidden', unread === 0);
+}
+function toggleNotifications(){
+  const panel = document.getElementById('notifPanel');
+  if(!panel) return;
+  if(panel.classList.contains('hidden')){
+    renderNotifications();
+    panel.classList.remove('hidden');
+  } else {
+    panel.classList.add('hidden');
+  }
+}
+function renderNotifications(){
+  const list = document.getElementById('notifList');
+  if(!list) return;
+  const notifs = appData.notifications || [];
+  if(!notifs.length){
+    list.innerHTML='<div class="notif-empty">No notifications yet</div>';
+    return;
+  }
+  list.innerHTML = notifs.map(n => {
+    const timeAgo = formatTimeAgo(n.timestamp);
+    return `<div class="notif-item ${n.read?'read':'unread'}">
+      <div class="notif-icon">🆕</div>
+      <div class="notif-body">
+        <div class="notif-msg">${escHtml(n.message)}</div>
+        <div class="notif-time">${timeAgo}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+function markAllNotificationsRead(){
+  (appData.notifications||[]).forEach(n => { n.read = true; });
+  saveLocal();
+  updateNotifBadge();
+  renderNotifications();
+}
+function formatTimeAgo(ts){
+  if(!ts) return '';
+  const diff = Date.now() - new Date(ts).getTime();
+  const mins = Math.floor(diff/60000);
+  if(mins < 1)  return 'Just now';
+  if(mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins/60);
+  if(hrs < 24)  return `${hrs}h ago`;
+  return new Date(ts).toLocaleDateString();
+}
+// Close notifications panel when clicking outside
+document.addEventListener('click', e => {
+  const wrap = document.getElementById('notifWrap');
+  const panel = document.getElementById('notifPanel');
+  if(wrap && panel && !wrap.contains(e.target)) panel.classList.add('hidden');
+});
 
 // ========== NOTES ==========
 function editNotes(jid){
@@ -613,7 +777,6 @@ function openJobModal(job){
   document.getElementById('jobName').value   = job ? (job.name||'') : '';
   document.getElementById('jobQty').value    = job ? (job.qty||job.quantity||'') : '';
   document.getElementById('jobSqft').value   = job ? (job.sqft||job.size||'') : '';
-  document.getElementById('jobMaterial').value  = job ? (job.material||job.materials||'') : '';
   document.getElementById('jobFinish').value    = job ? (job.finish||job.finishing||'') : '';
   document.getElementById('jobPriority').value  = job ? (job.priority||'medium') : 'medium';
   document.getElementById('jobDueDate').value   = job ? (job.dueDate||'') : '';
@@ -627,9 +790,16 @@ function openJobModal(job){
   const us = document.getElementById('uploadStatus');
   if(us){ us.textContent = ''; us.className = 'upload-status'; }
   document.getElementById('jobNotes').value     = job ? (job.notes||'') : '';
-  // Populate material datalist
-  const dl = document.getElementById('materialsList');
-  if(dl) dl.innerHTML = appData.materials.map(m => '<option value="'+escHtml(m.name)+'">').join('');
+  // Initialise multi-material picker
+  selectedMaterials = [];
+  if(job){
+    const mats = job.materials;
+    if(Array.isArray(mats) && mats.length) selectedMaterials = [...mats];
+    else if(typeof mats === 'string' && mats) selectedMaterials = mats.split(',').map(s=>s.trim()).filter(Boolean);
+    else if(job.material) selectedMaterials = job.material.split(',').map(s=>s.trim()).filter(Boolean);
+  }
+  renderMaterialTags();
+  hideMatDropdown();
   openModal('jobModal');
 }
 function editJob(jid){
@@ -665,8 +835,9 @@ async function saveJob(){
   job.name       = name;
   job.qty        = parseInt(document.getElementById('jobQty').value)||0;
   job.sqft       = parseFloat(document.getElementById('jobSqft').value)||0;
-  job.material   = document.getElementById('jobMaterial').value.trim();
-  job.materials  = job.material;
+  // Multi-material: store array; also keep legacy string fields for backward compat
+  job.materials  = selectedMaterials.length ? [...selectedMaterials] : [];
+  job.material   = selectedMaterials.join(', ');
   job.finish     = document.getElementById('jobFinish').value.trim();
   job.finishing  = job.finish;
   job.priority   = document.getElementById('jobPriority').value;
@@ -679,6 +850,7 @@ async function saveJob(){
   saveLocal();
   closeModal('jobModal');
   showToast(isEdit ? '✅ Job updated' : '✅ Job created: '+job.id, 'success');
+  if(!isEdit) addNotification('🆕 New job created: '+job.id+' — '+job.name+' (by '+currentRole+')', job.id);
   try{
     await Cloud.pushData(isEdit?'updateJob':'createJob', job);
   } catch(e){}
@@ -909,7 +1081,7 @@ function renderArchive(){
       <td>${escHtml(j.name||'-')}</td>
       <td>${escHtml(String(j.qty||j.quantity||'-'))}</td>
       <td>${escHtml(String(j.sqft||j.size||'-'))}</td>
-      <td>${escHtml(j.material||j.materials||'-')}</td>
+      <td>${escHtml(Array.isArray(j.materials)?j.materials.join(', '):(j.material||j.materials||'-'))}</td>
       <td><span class="badge badge-${(j.priority||'medium').toLowerCase()}">${(j.priority||'-').toUpperCase()}</span></td>
       <td>${escHtml(df.courier||'-')}</td>
       <td>${escHtml(df.tracking||'-')}</td>
@@ -995,14 +1167,21 @@ function renderAnalytics(){
 function renderInventory(){
   refreshCategoryDatalist();
   const alerts = document.getElementById('lowStockAlerts');
-  const low = appData.materials.filter(m => (m.stock||0) <= (m.lowAt||5));
+  const low = appData.materials.filter(m => (m.stock||0) > 0 && (m.stock||0) <= (m.lowAt||5));
   if(alerts) alerts.innerHTML = low.map(m => `<div class="low-alert">&#9888;&#65039; ${escHtml(m.name)}: ${m.stock} ${escHtml(m.unit||'')} remaining</div>`).join('');
 
   // Search filter
   const q = ((document.getElementById('invSearch')||{}).value||'').toLowerCase().trim();
-  const materials = q
-    ? appData.materials.filter(m => (m.name||'').toLowerCase().includes(q) || (m.category||'').toLowerCase().includes(q))
-    : appData.materials;
+
+  // Apply stock-status tab filter
+  let materials = appData.materials.filter(m => {
+    const matchQ = !q || (m.name||'').toLowerCase().includes(q) || (m.category||'').toLowerCase().includes(q);
+    if(!matchQ) return false;
+    if(invStockFilter === 'out')     return (m.stock||0) === 0;
+    if(invStockFilter === 'low')     return (m.stock||0) > 0 && (m.stock||0) <= (m.lowAt||5);
+    if(invStockFilter === 'instock') return (m.stock||0) > (m.lowAt||5);
+    return true; // 'all'
+  });
 
   const tbody = document.getElementById('inventoryBody');
   if(!tbody) return;
@@ -1011,31 +1190,90 @@ function renderInventory(){
   const showCost = can('canManageInventory');
   const costHeader = document.getElementById('invCostHeader');
   if(costHeader) costHeader.style.display = showCost ? '' : 'none';
+  const oosCostHdr = document.getElementById('oosCostHeader');
+  if(oosCostHdr) oosCostHdr.style.display = showCost ? '' : 'none';
 
   const colSpan = showCost ? 8 : 7;
-  if(!materials.length){ tbody.innerHTML=`<tr><td colspan="${colSpan}" class="no-data">No materials added yet</td></tr>`; return; }
-  tbody.innerHTML = materials.map(m => {
-    const isLow = (m.stock||0) <= (m.lowAt||5);
-    const badge = isLow ? '<span class="badge badge-high" style="margin-left:4px">LOW</span>' : '<span class="badge badge-low">OK</span>';
-    // Build action buttons based on role
-    const editBtn    = can('canManageInventory') ? `<button class="btn-icon" title="Edit" onclick="openMaterialModal('${escHtml(m.id)}')">&#9999;&#65039;</button>` : '';
-    const stockInBtn  = can('canStockIn')  ? `<button class="btn-icon" onclick="openStockModal('${escHtml(m.id)}','in')">+In</button>` : '';
-    const stockOutBtn = can('canStockOut') ? `<button class="btn-icon" onclick="openStockModal('${escHtml(m.id)}','out')" style="margin:0 4px">-Out</button>` : '';
-    const adjustBtn   = can('canStockAdjust') ? `<button class="btn-icon" onclick="openStockModal('${escHtml(m.id)}','adjust')">&#177;Adj</button>` : '';
-    const deleteBtn   = can('canManageInventory') ? `<button class="btn-icon" onclick="deleteMaterial('${escHtml(m.id)}')" title="Delete" style="color:var(--danger)">&#128465;&#65039;</button>` : '';
-    const anyAction = editBtn || stockInBtn || stockOutBtn || adjustBtn || deleteBtn;
-    const costCell = showCost ? `<td style="color:var(--success);font-weight:700">&#8377;${(m.cost||0).toFixed(2)}</td>` : '';
-    return `<tr>
-      <td><strong>${escHtml(m.name)}</strong></td>
-      <td>${escHtml(m.category||'-')}</td>
-      <td style="font-weight:700;color:${isLow?'var(--danger)':'var(--success)'}">${m.stock||0}</td>
-      <td>${escHtml(m.unit||'-')}</td>
-      <td>${m.lowAt||5}</td>
-      <td>${badge}</td>
-      ${costCell}
-      <td>${anyAction || '<span style="color:var(--text-muted);font-size:12px">View only</span>'}</td>
-    </tr>`;
-  }).join('');
+
+  // Out-of-stock spotlight section (shown when filter = 'out' or 'all')
+  const oosSection = document.getElementById('outOfStockSection');
+  const oosBody    = document.getElementById('outOfStockBody');
+  const mainTable  = document.getElementById('mainInvTable');
+  const outMats    = appData.materials.filter(m => (m.stock||0) === 0 && (!q || (m.name||'').toLowerCase().includes(q) || (m.category||'').toLowerCase().includes(q)));
+
+  if(invStockFilter === 'out'){
+    // Show only OOS section, hide normal table
+    if(oosSection) oosSection.classList.remove('hidden');
+    if(mainTable)  mainTable.classList.add('hidden');
+    if(oosBody){
+      if(!outMats.length){
+        oosBody.innerHTML = `<tr><td colspan="6" class="no-data">No out-of-stock materials 🎉</td></tr>`;
+      } else {
+        oosBody.innerHTML = outMats.map(m => renderOosRow(m, showCost)).join('');
+      }
+    }
+    return;
+  }
+
+  // For 'all' tab: show OOS spotlight if any exist, then main table without OOS rows
+  if(invStockFilter === 'all' && outMats.length){
+    if(oosSection) oosSection.classList.remove('hidden');
+    if(oosBody) oosBody.innerHTML = outMats.map(m => renderOosRow(m, showCost)).join('');
+    // Exclude OOS from main table in 'all' mode
+    materials = materials.filter(m => (m.stock||0) > 0);
+  } else {
+    if(oosSection) oosSection.classList.add('hidden');
+  }
+
+  if(mainTable) mainTable.classList.remove('hidden');
+  if(!materials.length){ tbody.innerHTML=`<tr><td colspan="${colSpan}" class="no-data">No materials found</td></tr>`; return; }
+  tbody.innerHTML = materials.map(m => renderInvRow(m, showCost)).join('');
+}
+
+function renderOosRow(m, showCost){
+  const editBtn    = can('canManageInventory') ? `<button class="btn-icon" title="Edit" onclick="openMaterialModal('${escHtml(m.id)}')">&#9999;&#65039;</button>` : '';
+  const stockInBtn = can('canStockIn') ? `<button class="btn-icon" onclick="openStockModal('${escHtml(m.id)}','in')">+In</button>` : '';
+  const deleteBtn  = can('canManageInventory') ? `<button class="btn-icon" onclick="deleteMaterial('${escHtml(m.id)}')" style="color:var(--danger)">&#128465;&#65039;</button>` : '';
+  const costCell   = showCost ? `<td style="color:var(--success);font-weight:700">&#8377;${(m.cost||0).toFixed(2)}</td>` : '';
+  return `<tr style="background:rgba(255,23,68,0.07)">
+    <td><strong style="color:var(--danger)">${escHtml(m.name)}</strong></td>
+    <td>${escHtml(m.category||'-')}</td>
+    <td>${escHtml(m.unit||'-')}</td>
+    <td>${m.lowAt||5}</td>
+    ${costCell}
+    <td>${editBtn}${stockInBtn}${deleteBtn}</td>
+  </tr>`;
+}
+
+function renderInvRow(m, showCost){
+  const isLow = (m.stock||0) > 0 && (m.stock||0) <= (m.lowAt||5);
+  const badge = isLow ? '<span class="badge badge-high" style="margin-left:4px">LOW</span>' : '<span class="badge badge-low">OK</span>';
+  const editBtn    = can('canManageInventory') ? `<button class="btn-icon" title="Edit" onclick="openMaterialModal('${escHtml(m.id)}')">&#9999;&#65039;</button>` : '';
+  const stockInBtn  = can('canStockIn')  ? `<button class="btn-icon" onclick="openStockModal('${escHtml(m.id)}','in')">+In</button>` : '';
+  const stockOutBtn = can('canStockOut') ? `<button class="btn-icon" onclick="openStockModal('${escHtml(m.id)}','out')" style="margin:0 4px">-Out</button>` : '';
+  const adjustBtn   = can('canStockAdjust') ? `<button class="btn-icon" onclick="openStockModal('${escHtml(m.id)}','adjust')">&#177;Adj</button>` : '';
+  const deleteBtn   = can('canManageInventory') ? `<button class="btn-icon" onclick="deleteMaterial('${escHtml(m.id)}')" title="Delete" style="color:var(--danger)">&#128465;&#65039;</button>` : '';
+  const anyAction = editBtn || stockInBtn || stockOutBtn || adjustBtn || deleteBtn;
+  const costCell = showCost ? `<td style="color:var(--success);font-weight:700">&#8377;${(m.cost||0).toFixed(2)}</td>` : '';
+  return `<tr>
+    <td><strong>${escHtml(m.name)}</strong></td>
+    <td>${escHtml(m.category||'-')}</td>
+    <td style="font-weight:700;color:${isLow?'var(--warning)':'var(--success)'}">${m.stock||0}</td>
+    <td>${escHtml(m.unit||'-')}</td>
+    <td>${m.lowAt||5}</td>
+    <td>${badge}</td>
+    ${costCell}
+    <td>${anyAction || '<span style="color:var(--text-muted);font-size:12px">View only</span>'}</td>
+  </tr>`;
+}
+
+function setInvFilter(filter){
+  invStockFilter = filter;
+  ['all','instock','low','out'].forEach(f => {
+    const btn = document.getElementById('invTab'+f.charAt(0).toUpperCase()+f.slice(1));
+    if(btn) btn.classList.toggle('active', f===filter);
+  });
+  renderInventory();
 }
 
 // Open Add or Edit material modal

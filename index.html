@@ -118,6 +118,19 @@
       </div>
       <div class="header-right">
         <button class="btn-icon-header" onclick="loadData()" title="Refresh">🔄</button>
+        <!-- Notification bell — admin only -->
+        <div class="notif-wrap" id="notifWrap" style="display:none">
+          <button class="btn-icon-header notif-bell" id="notifBell" onclick="toggleNotifications()" title="Notifications">
+            🔔<span class="notif-badge hidden" id="notifBadge">0</span>
+          </button>
+          <div class="notif-panel glass hidden" id="notifPanel">
+            <div class="notif-panel-header">
+              <span>Notifications</span>
+              <button class="btn-icon" onclick="markAllNotificationsRead()" style="font-size:11px">✓ Mark all read</button>
+            </div>
+            <div class="notif-list" id="notifList"></div>
+          </div>
+        </div>
         <button class="btn-icon-header" id="headerSettingsBtn" onclick="openModal('settingsModal');loadSettingsForm()" title="Settings">⚙️</button>
         <button class="btn-icon-header" onclick="toggleTheme()" id="themeBtn" title="Toggle theme">🌙</button>
         <div class="system-clock" id="systemClock">--:--:--</div>
@@ -223,7 +236,23 @@
         </div>
       </div>
       <div id="lowStockAlerts"></div>
-      <div class="glass table-wrap">
+      <div class="inv-filter-tabs">
+        <button class="inv-tab active" id="invTabAll"     onclick="setInvFilter('all')">All</button>
+        <button class="inv-tab"        id="invTabInstock" onclick="setInvFilter('instock')">✅ In Stock</button>
+        <button class="inv-tab"        id="invTabLow"     onclick="setInvFilter('low')">⚠️ Low Stock</button>
+        <button class="inv-tab"        id="invTabOut"     onclick="setInvFilter('out')">🔴 Out of Stock</button>
+      </div>
+      <!-- Out-of-stock spotlight -->
+      <div id="outOfStockSection" class="out-of-stock-section hidden">
+        <div class="oos-heading">🔴 Out of Stock Materials</div>
+        <div class="glass table-wrap" style="margin-bottom:0">
+          <table class="data-table">
+            <thead><tr><th>Material</th><th>Category</th><th>Unit</th><th>Low Alert</th><th id="oosCostHeader">Cost</th><th>Actions</th></tr></thead>
+            <tbody id="outOfStockBody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="glass table-wrap" id="mainInvTable">
         <table class="data-table">
           <thead><tr><th>Material</th><th>Category</th><th>Stock</th><th>Unit</th><th>Low Alert</th><th>Status</th><th id="invCostHeader">Cost</th><th>Actions</th></tr></thead>
           <tbody id="inventoryBody"></tbody>
@@ -278,11 +307,21 @@
           <div class="form-hint">Total print area in square feet (width × height).</div>
           <input type="number" class="form-input" id="jobSqft" placeholder="0.00" step="0.01" min="0">
         </div>
-        <div class="form-group">
-          <label class="form-label">Material</label>
-          <div class="form-hint">Substrate to be printed on — type or start typing to see saved materials.</div>
-          <input type="text" class="form-input" id="jobMaterial" placeholder="e.g. Vinyl, Canvas, Flex" list="materialsList">
-          <datalist id="materialsList"></datalist>
+        <div class="form-group form-full">
+          <label class="form-label">Materials</label>
+          <div class="form-hint">Select one or more materials from inventory, or type a custom name and press Enter.</div>
+          <div class="mat-picker-wrap" id="matPickerWrap">
+            <div class="mat-tags" id="selectedMaterialTags"></div>
+            <div class="mat-picker-input-row">
+              <input type="text" class="form-input mat-picker-input" id="matPickerSearch"
+                placeholder="Search materials from inventory or type custom…"
+                oninput="filterMatPicker()"
+                onfocus="showMatDropdown()"
+                onkeydown="matPickerKeydown(event)"
+                autocomplete="off">
+            </div>
+            <div class="mat-picker-dropdown hidden" id="matPickerDropdown"></div>
+          </div>
         </div>
         <div class="form-group">
           <label class="form-label">Finish</label>
