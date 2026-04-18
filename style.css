@@ -2091,6 +2091,49 @@ body::before {
   background: rgba(255,23,68,0.15);
 }
 
+/* Work Notes Display */
+.emp-task-work-notes {
+  background: rgba(0,240,255,0.06);
+  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 16px;
+  border-left: 3px solid var(--primary);
+}
+
+.work-notes-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--primary);
+  margin-bottom: 8px;
+}
+
+.work-note-item {
+  background: rgba(255,255,255,0.05);
+  border-radius: 6px;
+  padding: 8px 10px;
+  margin-bottom: 6px;
+}
+
+.work-note-text {
+  font-size: 12px;
+  display: block;
+  margin-bottom: 4px;
+  line-height: 1.4;
+}
+
+.work-note-meta {
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.work-notes-more {
+  font-size: 11px;
+  color: var(--primary);
+  font-style: italic;
+  text-align: center;
+  padding-top: 4px;
+}
+
 .emp-task-completion-info {
   background: rgba(0,255,136,0.08);
   border-radius: 12px;
@@ -2330,6 +2373,41 @@ body::before {
   font-size: 11px;
   color: var(--text-muted);
   margin-top: 4px;
+}
+
+/* ========== TASK NOTES MODAL ========== */
+.task-note-summary {
+  margin-bottom: 16px;
+}
+
+.existing-notes {
+  margin-top: 20px;
+}
+
+.existing-notes-header {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: var(--text-muted);
+}
+
+.existing-note-item {
+  background: rgba(255,255,255,0.05);
+  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 10px;
+  border-left: 3px solid var(--primary);
+}
+
+.existing-note-text {
+  font-size: 13px;
+  line-height: 1.5;
+  margin-bottom: 6px;
+}
+
+.existing-note-meta {
+  font-size: 11px;
+  color: var(--text-muted);
 }
 
 /* ========== DEPARTMENT NOTIFICATIONS ========== */

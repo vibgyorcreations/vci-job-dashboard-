@@ -2007,7 +2007,21 @@ function renderEmployeeFullTasks(filter = 'current'){
         ${dueDate ? `<span class="emp-task-meta-item ${isOverdue ? 'overdue' : ''}">📅 Due: ${dueDate}</span>` : ''}
         ${job ? `<span class="emp-task-meta-item">📋 Job: ${escHtml(job.client || '')} - ${escHtml(job.name || job.id)}</span>` : ''}
         ${task.createdAt ? `<span class="emp-task-meta-item">📆 Created: ${new Date(task.createdAt).toLocaleDateString('en-GB')}</span>` : ''}
+        ${(task.workNotes && task.workNotes.length > 0) ? `<span class="emp-task-meta-item">📝 ${task.workNotes.length} note(s)</span>` : ''}
       </div>
+      
+      ${(task.workNotes && task.workNotes.length > 0) ? `
+        <div class="emp-task-work-notes">
+          <div class="work-notes-label">📝 Work Notes:</div>
+          ${task.workNotes.slice(-2).map(n => `
+            <div class="work-note-item">
+              <span class="work-note-text">${escHtml(n.text.substring(0, 100))}${n.text.length > 100 ? '...' : ''}</span>
+              <span class="work-note-meta">${n.author} • ${new Date(n.timestamp).toLocaleDateString('en-GB')}</span>
+            </div>
+          `).join('')}
+          ${task.workNotes.length > 2 ? `<div class="work-notes-more">+${task.workNotes.length - 2} more notes</div>` : ''}
+        </div>
+      ` : ''}
       
       ${task.completionNotes ? `
         <div class="emp-task-completion-info">
@@ -2548,17 +2562,57 @@ function addTaskNote(taskId){
   const task = appData.tasks.find(t => t.id === taskId);
   if(!task) return;
   
-  const note = prompt('Add a note to this task:');
-  if(!note || !note.trim()) return;
+  document.getElementById('taskNoteId').value = taskId;
+  document.getElementById('taskNoteSummary').innerHTML = `
+    <div class="task-summary-card">
+      <strong>${escHtml(task.title)}</strong>
+      ${task.description ? `<p>${escHtml(task.description)}</p>` : ''}
+    </div>
+  `;
+  document.getElementById('taskNoteText').value = '';
+  
+  // Show existing notes
+  const existingNotesContainer = document.getElementById('existingNotes');
+  const notes = task.workNotes || [];
+  if(notes.length > 0){
+    existingNotesContainer.innerHTML = `
+      <div class="existing-notes-header">📜 Previous Notes (${notes.length})</div>
+      ${notes.map(n => `
+        <div class="existing-note-item">
+          <div class="existing-note-text">${escHtml(n.text)}</div>
+          <div class="existing-note-meta">
+            ${escHtml(n.author)} • ${new Date(n.timestamp).toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+          </div>
+        </div>
+      `).join('')}
+    `;
+  } else {
+    existingNotesContainer.innerHTML = '';
+  }
+  
+  openModal('taskNoteModal');
+}
+
+function submitTaskNote(){
+  const taskId = document.getElementById('taskNoteId').value;
+  const task = appData.tasks.find(t => t.id === taskId);
+  if(!task) return;
+  
+  const noteText = document.getElementById('taskNoteText').value.trim();
+  if(!noteText){
+    showToast('❌ Please enter a note', 'error');
+    return;
+  }
   
   if(!task.workNotes) task.workNotes = [];
   task.workNotes.push({
-    text: note.trim(),
+    text: noteText,
     timestamp: new Date().toISOString(),
     author: currentEmployee ? currentEmployee.name : 'Unknown'
   });
   
   saveLocal();
+  closeModal('taskNoteModal');
   showToast('📝 Note added!', 'success');
   renderEmployeeFullTasks(currentEmpTab);
 }
