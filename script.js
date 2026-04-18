@@ -1995,7 +1995,7 @@ function saveEmployee(){
     if(!emp){ showToast('❌ Employee not found', 'error'); return; }
   } else {
     emp = {
-      id: 'EMP-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9),
+      id: 'EMP-' + Date.now() + '-' + Math.random().toString(36).slice(2, 11),
       createdAt: new Date().toISOString()
     };
     appData.employees.push(emp);
@@ -2148,7 +2148,7 @@ function saveTask(){
     if(!task){ showToast('❌ Task not found', 'error'); return; }
   } else {
     task = {
-      id: 'TASK-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9),
+      id: 'TASK-' + Date.now() + '-' + Math.random().toString(36).slice(2, 11),
       status: 'pending',
       createdAt: new Date().toISOString()
     };
