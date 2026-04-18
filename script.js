@@ -1964,7 +1964,7 @@ function saveEmployee(){
     if(!emp){ showToast('❌ Employee not found', 'error'); return; }
   } else {
     emp = {
-      id: 'EMP-' + Date.now(),
+      id: 'EMP-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9),
       createdAt: new Date().toISOString()
     };
     appData.employees.push(emp);
@@ -2117,7 +2117,7 @@ function saveTask(){
     if(!task){ showToast('❌ Task not found', 'error'); return; }
   } else {
     task = {
-      id: 'TASK-' + Date.now(),
+      id: 'TASK-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9),
       status: 'pending',
       createdAt: new Date().toISOString()
     };
@@ -2242,7 +2242,6 @@ function completeEmployeeTask(taskId){
 }
 
 // ========== UPDATE SWITCH VIEW FOR EMPLOYEES ==========
-const originalSwitchView = typeof switchView !== 'undefined' ? switchView : null;
 function switchViewWithEmployees(view){
   // Hide employees nav if not admin
   const navEmp = document.getElementById('navEmployees');
@@ -2281,7 +2280,6 @@ if(typeof window !== 'undefined'){
 }
 
 // ========== APPLY ROLE UI UPDATE FOR EMPLOYEES NAV ==========
-const _originalApplyRoleUI = typeof applyRoleUI !== 'undefined' ? applyRoleUI : null;
 function applyRoleUIWithEmployees(){
   // Show/hide Employees nav based on permissions
   const navEmp = document.getElementById('navEmployees');
@@ -2309,7 +2307,6 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ========== UPDATE CHECK PIN FOR EMPLOYEE LOGIN ==========
-const _origCheckPin = typeof checkPin !== 'undefined' ? checkPin : null;
 function checkPinWithEmployee(){
   if(pendingRole === 'employee' && currentEmployee){
     const expected = currentEmployee.pin || '0000';
@@ -2343,7 +2340,6 @@ if(typeof window !== 'undefined'){
 }
 
 // ========== UPDATE backToRoles TO RESET EMPLOYEE LOGIN ==========
-const _origBackToRoles = typeof backToRoles !== 'undefined' ? backToRoles : null;
 function backToRolesWithEmployee(){
   pendingRole = null;
   pinBuffer = '';
@@ -2354,7 +2350,8 @@ function backToRolesWithEmployee(){
   document.getElementById('employeeLoginBtn').classList.remove('hidden');
   document.getElementById('employeeLoginToggle').classList.remove('hidden');
   document.getElementById('pinError').classList.add('hidden');
-  document.getElementById('employeeSearchInput').value = '';
+  const empSearchInput = document.getElementById('employeeSearchInput');
+  if(empSearchInput) empSearchInput.value = '';
   updatePinDots();
 }
 

@@ -8,6 +8,12 @@ const ASSETS_TO_CACHE = [
   '/manifest.json'
 ];
 
+// API domains that should bypass cache
+const API_DOMAINS = [
+  'script.google.com',
+  'script.googleusercontent.com'
+];
+
 // Install event - cache assets
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -36,13 +42,23 @@ self.addEventListener('activate', (event) => {
   );
 });
 
+// Check if URL is an API request that should bypass cache
+function isApiRequest(url) {
+  try {
+    const urlObj = new URL(url);
+    return API_DOMAINS.some(domain => urlObj.hostname.endsWith(domain));
+  } catch (e) {
+    return false;
+  }
+}
+
 // Fetch event - serve from cache, fallback to network
 self.addEventListener('fetch', (event) => {
   // Skip non-GET requests
   if (event.request.method !== 'GET') return;
   
-  // Skip API requests (let them go to network)
-  if (event.request.url.includes('script.google.com')) return;
+  // Skip API requests - let them go directly to network
+  if (isApiRequest(event.request.url)) return;
 
   event.respondWith(
     caches.match(event.request)
@@ -74,7 +90,8 @@ self.addEventListener('fetch', (event) => {
           })
           .catch(() => {
             // Offline fallback for HTML pages
-            if (event.request.headers.get('accept').includes('text/html')) {
+            const acceptHeader = event.request.headers.get('accept') || '';
+            if (acceptHeader.includes('text/html')) {
               return caches.match('/index.html');
             }
           });
