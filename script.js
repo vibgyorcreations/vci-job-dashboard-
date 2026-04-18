@@ -732,8 +732,15 @@ async function saveNotes(jid){
 function openJobFile(jid){
   const job = appData.jobs.find(j => j.id === jid);
   const url = job && (job.fileUrl || job.files || '');
-  if(url){ window.open(url, '_blank', 'noopener,noreferrer'); }
-  else { showToast('No file attached to this job','info'); }
+  if(!url){ showToast('No file attached to this job','info'); return; }
+  // Only open http/https URLs to prevent javascript: or data: URI abuse
+  try {
+    const parsed = new URL(url);
+    if(parsed.protocol !== 'https:' && parsed.protocol !== 'http:'){
+      showToast('Invalid file URL','error'); return;
+    }
+  } catch(e){ showToast('Invalid file URL','error'); return; }
+  window.open(url, '_blank', 'noopener,noreferrer');
 }
 
 // ========== FILE UPLOAD TO GOOGLE DRIVE ==========
