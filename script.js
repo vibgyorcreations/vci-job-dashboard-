@@ -1812,6 +1812,18 @@ function backToRolesFromEmployee(){
   backToRoles();
 }
 
+function hideEmployeeLogin(){
+  // Reset employee login UI elements
+  const empSection = document.getElementById('employeeLoginSection');
+  const empBtn = document.getElementById('employeeLoginBtn');
+  const empToggle = document.getElementById('employeeLoginToggle');
+  const empSearch = document.getElementById('employeeSearchInput');
+  if(empSection) empSection.classList.add('hidden');
+  if(empBtn) empBtn.classList.remove('hidden');
+  if(empToggle) empToggle.classList.remove('hidden');
+  if(empSearch) empSearch.value = '';
+}
+
 function filterEmployeeList(){
   renderEmployeeLoginList();
 }
