@@ -40,7 +40,7 @@ const ROLE_PERMISSIONS = {
   },
   waiting:  { canCreateJob:true, canViewDashboard:true, canViewInventory:true, canStockOut:true },
   printing: { canMoveToPrinting:true, canMoveToAssembly:true, canViewDashboard:true, canViewInventory:true, canStockOut:true, canAssignMachine:true },
-  assembly: { canMoveToAssembly:true, canViewDashboard:true, canViewInventory:true, canStockOut:true },
+  assembly: { canMoveToAssembly:true, canMoveToDispatch:true, canViewDashboard:true, canViewInventory:true, canStockOut:true },
   dispatch: { canMoveToDispatch:true, canArchive:true, canViewDashboard:true, canViewArchive:true }
 };
 function can(perm){ return !!(currentRole && ROLE_PERMISSIONS[currentRole] && ROLE_PERMISSIONS[currentRole][perm]); }
