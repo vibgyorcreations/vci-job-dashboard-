@@ -217,9 +217,19 @@ function selectRole(role){
 }
 function backToRoles(){
   pendingRole = null; pinBuffer = '';
+  currentEmployee = null;
   document.getElementById('pinEntry').classList.add('hidden');
   document.getElementById('roleSelect').classList.remove('hidden');
   document.getElementById('pinError').classList.add('hidden');
+  // Reset employee login UI
+  const empSection = document.getElementById('employeeLoginSection');
+  const empBtn = document.getElementById('employeeLoginBtn');
+  const empToggle = document.getElementById('employeeLoginToggle');
+  const empSearch = document.getElementById('employeeSearchInput');
+  if(empSection) empSection.classList.add('hidden');
+  if(empBtn) empBtn.classList.remove('hidden');
+  if(empToggle) empToggle.classList.remove('hidden');
+  if(empSearch) empSearch.value = '';
   updatePinDots();
 }
 function pinDigit(d){
@@ -237,6 +247,20 @@ function updatePinDots(){
   }
 }
 function checkPin(){
+  // Handle employee login with their own PIN
+  if(pendingRole === 'employee' && currentEmployee){
+    const expected = currentEmployee.pin || '0000';
+    if(pinBuffer === expected){
+      loginAsEmployee(currentEmployee);
+    } else {
+      document.getElementById('pinError').classList.remove('hidden');
+      pinBuffer = '';
+      updatePinDots();
+      setTimeout(() => document.getElementById('pinError').classList.add('hidden'), 2500);
+    }
+    return;
+  }
+  // Handle normal role login
   const expected = appData.pins[pendingRole] || '0000';
   if(pinBuffer === expected){
     currentRole = pendingRole;
@@ -324,11 +348,12 @@ function renderCurrentView(){
   else if(currentView === 'analytics') renderAnalytics();
   else if(currentView === 'inventory') renderInventory();
   else if(currentView === 'machines') renderMachines();
+  else if(currentView === 'employees') { renderEmployees(); renderTasks(); }
 }
 
 function switchView(v){
   // Guard: prevent non-admin from navigating to views they don't have access to
-  const viewPerms = { archive:'canViewArchive', analytics:'canViewAnalytics', inventory:'canViewInventory', machines:'canViewMachines' };
+  const viewPerms = { archive:'canViewArchive', analytics:'canViewAnalytics', inventory:'canViewInventory', machines:'canViewMachines', employees:'canViewEmployees' };
   if(viewPerms[v] && !can(viewPerms[v])){
     showToast('⛔ Access denied','error'); return;
   }
@@ -339,7 +364,7 @@ function switchView(v){
   if(viewEl){ viewEl.classList.remove('hidden'); viewEl.classList.add('active'); }
   const navEl = document.querySelector('[data-view="'+v+'"]');
   if(navEl) navEl.classList.add('active');
-  document.getElementById('headerTitle').textContent = {dashboard:'Dashboard',archive:'Archive',analytics:'Analytics',inventory:'Inventory',machines:'Machines'}[v] || v;
+  document.getElementById('headerTitle').textContent = {dashboard:'Dashboard',archive:'Archive',analytics:'Analytics',inventory:'Inventory',machines:'Machines',employees:'Employees'}[v] || v;
   renderCurrentView();
   // Close sidebar on mobile after nav
   if(window.innerWidth <= 768) document.getElementById('sidebar').classList.remove('mobile-open');
@@ -367,11 +392,17 @@ function applyRoleUI(){
   if(settBtn) settBtn.style.display = can('canManageSettings') ? '' : 'none';
 
   // Sidebar nav items — hide views the role cannot access
-  const navPerms = { archive:'canViewArchive', analytics:'canViewAnalytics', inventory:'canViewInventory', machines:'canViewMachines' };
+  const navPerms = { archive:'canViewArchive', analytics:'canViewAnalytics', inventory:'canViewInventory', machines:'canViewMachines', employees:'canViewEmployees' };
   Object.entries(navPerms).forEach(([view, perm]) => {
     const navEl = document.querySelector('[data-view="'+view+'"]');
     if(navEl) navEl.style.display = can(perm) ? '' : 'none';
   });
+
+  // If employee role, update session role display
+  if(currentRole === 'employee' && currentEmployee){
+    const sessionRole = document.getElementById('sessionRole');
+    if(sessionRole) sessionRole.textContent = currentEmployee.name;
+  }
 
   // Kanban columns — show only the column(s) this role owns
   const visibleCols = ROLE_COLUMNS[currentRole] || ['waiting'];
@@ -2239,123 +2270,4 @@ function completeEmployeeTask(taskId){
   saveLocal();
   showToast('✅ Task completed!', 'success');
   openEmployeeTaskDashboard();
-}
-
-// ========== UPDATE SWITCH VIEW FOR EMPLOYEES ==========
-function switchViewWithEmployees(view){
-  // Hide employees nav if not admin
-  const navEmp = document.getElementById('navEmployees');
-  if(navEmp) navEmp.style.display = can('canViewEmployees') ? '' : 'none';
-  
-  // Handle employees view
-  if(view === 'employees'){
-    if(!can('canViewEmployees')){
-      showToast('❌ Access denied', 'error');
-      return;
-    }
-    renderEmployees();
-    renderTasks();
-  }
-  
-  // Call original or handle view switch
-  currentView = view;
-  document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
-  const viewEl = document.getElementById('view'+view.charAt(0).toUpperCase()+view.slice(1));
-  if(viewEl) viewEl.classList.remove('hidden');
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  const navEl = document.querySelector(`.nav-item[data-view="${view}"]`);
-  if(navEl) navEl.classList.add('active');
-  document.getElementById('headerTitle').textContent = {
-    dashboard:'Dashboard', archive:'Archive', analytics:'Analytics',
-    inventory:'Inventory', machines:'Machines', employees:'Employees'
-  }[view] || view;
-}
-
-// Override switchView if it exists
-if(typeof window !== 'undefined'){
-  const _origSwitch = window.switchView;
-  window.switchView = function(view){
-    switchViewWithEmployees(view);
-  };
-}
-
-// ========== APPLY ROLE UI UPDATE FOR EMPLOYEES NAV ==========
-function applyRoleUIWithEmployees(){
-  // Show/hide Employees nav based on permissions
-  const navEmp = document.getElementById('navEmployees');
-  if(navEmp) navEmp.style.display = can('canViewEmployees') ? '' : 'none';
-  
-  // If employee role, show task dashboard button in session area
-  if(currentRole === 'employee' && currentEmployee){
-    const sessionRole = document.getElementById('sessionRole');
-    if(sessionRole) sessionRole.textContent = currentEmployee.name;
-  }
-}
-
-// Hook into the page load
-document.addEventListener('DOMContentLoaded', () => {
-  // Wait a bit for other scripts to load
-  setTimeout(() => {
-    const origApplyRoleUI = window.applyRoleUI;
-    if(origApplyRoleUI){
-      window.applyRoleUI = function(){
-        origApplyRoleUI();
-        applyRoleUIWithEmployees();
-      };
-    }
-  }, 100);
-});
-
-// ========== UPDATE CHECK PIN FOR EMPLOYEE LOGIN ==========
-function checkPinWithEmployee(){
-  if(pendingRole === 'employee' && currentEmployee){
-    const expected = currentEmployee.pin || '0000';
-    if(pinBuffer === expected){
-      loginAsEmployee(currentEmployee);
-    } else {
-      document.getElementById('pinError').classList.remove('hidden');
-      pinBuffer = '';
-      updatePinDots();
-      setTimeout(() => document.getElementById('pinError').classList.add('hidden'), 2500);
-    }
-  } else {
-    // Call original checkPin for roles
-    const expected = appData.pins[pendingRole] || '0000';
-    if(pinBuffer === expected){
-      currentRole = pendingRole;
-      sessionStorage.setItem('ffos_session', JSON.stringify({role:currentRole, ts: Date.now()}));
-      showApp();
-    } else {
-      document.getElementById('pinError').classList.remove('hidden');
-      pinBuffer = '';
-      updatePinDots();
-      setTimeout(() => document.getElementById('pinError').classList.add('hidden'), 2500);
-    }
-  }
-}
-
-// Override checkPin
-if(typeof window !== 'undefined'){
-  window.checkPin = checkPinWithEmployee;
-}
-
-// ========== UPDATE backToRoles TO RESET EMPLOYEE LOGIN ==========
-function backToRolesWithEmployee(){
-  pendingRole = null;
-  pinBuffer = '';
-  currentEmployee = null;
-  document.getElementById('pinEntry').classList.add('hidden');
-  document.getElementById('employeeLoginSection').classList.add('hidden');
-  document.getElementById('roleSelect').classList.remove('hidden');
-  document.getElementById('employeeLoginBtn').classList.remove('hidden');
-  document.getElementById('employeeLoginToggle').classList.remove('hidden');
-  document.getElementById('pinError').classList.add('hidden');
-  const empSearchInput = document.getElementById('employeeSearchInput');
-  if(empSearchInput) empSearchInput.value = '';
-  updatePinDots();
-}
-
-// Override backToRoles
-if(typeof window !== 'undefined'){
-  window.backToRoles = backToRolesWithEmployee;
 }
