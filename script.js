@@ -2258,20 +2258,33 @@ function renderTasks(){
     const emp = appData.employees.find(e => e.id === task.assignedTo);
     const job = task.relatedJob ? appData.jobs.find(j => j.id === task.relatedJob) : null;
     const isCompleted = task.status === 'completed';
+    const isInProgress = task.status === 'in-progress';
+    const statusIcon = isCompleted ? '✅' : isInProgress ? '⏳' : '📋';
+    const statusText = task.status.replace('-', ' ');
+    const notesCount = (task.workNotes || []).length;
     
     return `
-    <div class="task-item ${isCompleted ? 'completed' : ''}">
+    <div class="task-item ${task.status}">
       <div class="task-checkbox ${isCompleted ? 'checked' : ''}" onclick="toggleTaskComplete('${task.id}')"></div>
       <div class="task-content">
         <div class="task-title">${escHtml(task.title)}</div>
         <div class="task-meta">
+          <span class="task-meta-item">${statusIcon} ${statusText.toUpperCase()}</span>
           <span class="task-meta-item">👤 ${emp ? escHtml(emp.name) : 'Unassigned'}</span>
           ${task.dueDate ? `<span class="task-meta-item">📅 ${task.dueDate}</span>` : ''}
           ${job ? `<span class="task-meta-item">📋 ${escHtml(job.name || job.id)}</span>` : ''}
           <span class="task-priority ${task.priority}">${task.priority.toUpperCase()}</span>
+          ${notesCount > 0 ? `<span class="task-meta-item task-notes-badge">📝 ${notesCount} note(s)</span>` : ''}
         </div>
+        ${(isCompleted && task.completionNotes) ? `
+          <div class="task-completion-info">
+            <span class="completion-info-label">📝 Completion Notes:</span> ${escHtml(task.completionNotes.substring(0, 80))}${task.completionNotes.length > 80 ? '...' : ''}
+            ${task.completionRating ? ` | ⭐ Rating: ${task.completionRating}/5` : ''}
+          </div>
+        ` : ''}
       </div>
       <div class="task-actions">
+        <button class="btn-icon" onclick="viewTaskDetails('${task.id}')" title="View Details">👁️</button>
         <button class="btn-icon" onclick="editTask('${task.id}')" title="Edit">✏️</button>
         <button class="btn-icon" onclick="deleteTask('${task.id}')" title="Delete" style="color:var(--danger)">🗑️</button>
       </div>
@@ -2410,6 +2423,114 @@ function toggleTaskComplete(taskId){
   renderTasks();
   renderEmployees();
   showToast(task.status === 'completed' ? '✅ Task completed!' : '📋 Task reopened', 'success');
+}
+
+function viewTaskDetails(taskId){
+  const task = appData.tasks.find(t => t.id === taskId);
+  if(!task) return;
+  
+  const emp = appData.employees.find(e => e.id === task.assignedTo);
+  const job = task.relatedJob ? appData.jobs.find(j => j.id === task.relatedJob) : null;
+  const statusIcon = task.status === 'completed' ? '✅' : task.status === 'in-progress' ? '⏳' : '📋';
+  const priorityColors = { low: '#00ff88', medium: '#ffd000', high: '#ff1744' };
+  const priorityIcons = { low: '🟢', medium: '🟡', high: '🔴' };
+  
+  // Build work notes HTML
+  const workNotes = task.workNotes || [];
+  let notesHtml = '';
+  if(workNotes.length > 0){
+    notesHtml = `
+      <div class="task-details-section">
+        <div class="task-details-label">📝 Work Notes (${workNotes.length})</div>
+        <div class="task-details-notes-list">
+          ${workNotes.map(n => `
+            <div class="task-details-note">
+              <div class="note-text">${escHtml(n.text)}</div>
+              <div class="note-meta">${escHtml(n.author)} • ${new Date(n.timestamp).toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }
+  
+  // Build completion info HTML
+  let completionHtml = '';
+  if(task.status === 'completed'){
+    completionHtml = `
+      <div class="task-details-section completion-section">
+        <div class="task-details-label">✅ Completion Details</div>
+        <div class="completion-detail-item">
+          <span class="detail-key">Completed At:</span>
+          <span class="detail-value">${task.completedAt ? new Date(task.completedAt).toLocaleString('en-GB') : 'N/A'}</span>
+        </div>
+        ${task.completionNotes ? `
+          <div class="completion-detail-item full-width">
+            <span class="detail-key">Notes:</span>
+            <span class="detail-value">${escHtml(task.completionNotes)}</span>
+          </div>
+        ` : ''}
+        ${task.completionRating ? `
+          <div class="completion-detail-item">
+            <span class="detail-key">Self Rating:</span>
+            <span class="detail-value">⭐ ${task.completionRating}/5</span>
+          </div>
+        ` : ''}
+        ${task.completionFeedback ? `
+          <div class="completion-detail-item full-width">
+            <span class="detail-key">Feedback:</span>
+            <span class="detail-value">${escHtml(task.completionFeedback)}</span>
+          </div>
+        ` : ''}
+      </div>
+    `;
+  }
+  
+  document.getElementById('taskDetailsContent').innerHTML = `
+    <div class="task-details-header">
+      <div class="task-details-title">${escHtml(task.title)}</div>
+      <div class="task-details-badges">
+        <span class="task-status-badge ${task.status}">${statusIcon} ${task.status.replace('-', ' ').toUpperCase()}</span>
+        <span class="task-priority-badge" style="color: ${priorityColors[task.priority]}">${priorityIcons[task.priority]} ${task.priority.toUpperCase()}</span>
+      </div>
+    </div>
+    
+    ${task.description ? `<div class="task-details-desc">${escHtml(task.description)}</div>` : ''}
+    
+    <div class="task-details-info-grid">
+      <div class="info-item">
+        <span class="info-label">👤 Assigned To</span>
+        <span class="info-value">${emp ? escHtml(emp.name) : 'Unassigned'}</span>
+      </div>
+      ${task.dueDate ? `
+        <div class="info-item">
+          <span class="info-label">📅 Due Date</span>
+          <span class="info-value">${new Date(task.dueDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+        </div>
+      ` : ''}
+      ${job ? `
+        <div class="info-item">
+          <span class="info-label">📋 Related Job</span>
+          <span class="info-value">${escHtml(job.id)} - ${escHtml(job.name || job.client)}</span>
+        </div>
+      ` : ''}
+      <div class="info-item">
+        <span class="info-label">📆 Created At</span>
+        <span class="info-value">${task.createdAt ? new Date(task.createdAt).toLocaleDateString('en-GB') : 'N/A'}</span>
+      </div>
+      ${task.startedAt ? `
+        <div class="info-item">
+          <span class="info-label">▶️ Started At</span>
+          <span class="info-value">${new Date(task.startedAt).toLocaleString('en-GB')}</span>
+        </div>
+      ` : ''}
+    </div>
+    
+    ${notesHtml}
+    ${completionHtml}
+  `;
+  
+  openModal('taskDetailsModal');
 }
 
 // ========== EMPLOYEE TASK DASHBOARD ==========

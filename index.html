@@ -965,6 +965,24 @@
   </div>
 </div>
 
+<!-- Task Details Modal (Admin View) -->
+<div class="modal" id="taskDetailsModal">
+  <div class="modal-content glass modal-lg">
+    <div class="modal-header">
+      <h3 class="modal-title">📋 Task Details</h3>
+      <button class="modal-close" onclick="closeModal('taskDetailsModal')">&#10005;</button>
+    </div>
+    <div class="modal-body">
+      <div id="taskDetailsContent">
+        <!-- Task details will be populated here -->
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick="closeModal('taskDetailsModal')">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script src="script.js"></script>
 </body>
 </html>
