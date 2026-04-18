@@ -1248,3 +1248,532 @@ body::before {
 @media(max-width:768px) {
   .notif-panel { width:290px; right:-60px; }
 }
+
+/* ========== PWA INSTALL BUTTON ========== */
+.btn-pwa-install {
+  margin-top: 16px;
+  background: linear-gradient(135deg, var(--success), #00cc66);
+  color: #fff;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  box-shadow: 0 0 20px rgba(0,255,136,0.3);
+  transition: all .2s;
+  width: 100%;
+}
+.btn-pwa-install:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 30px rgba(0,255,136,0.5);
+}
+
+/* ========== EMPLOYEE LOGIN SECTION ========== */
+.employee-login-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 24px;
+  width: 100%;
+}
+.divider-line {
+  flex: 1;
+  height: 1px;
+  background: var(--glass-border);
+}
+.divider-text {
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+.btn-employee-login {
+  margin-top: 12px;
+  background: rgba(123,45,255,0.2);
+  color: var(--tertiary);
+  border: 1px solid var(--tertiary);
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all .2s;
+  width: 100%;
+}
+.btn-employee-login:hover {
+  background: rgba(123,45,255,0.35);
+  transform: translateY(-2px);
+}
+
+.employee-login-section {
+  width: 100%;
+  text-align: center;
+}
+.employee-login-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.employee-login-icon {
+  font-size: 32px;
+}
+.employee-login-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--primary);
+}
+.employee-search-wrap {
+  margin-bottom: 12px;
+}
+.employee-search-input {
+  width: 100%;
+  padding: 12px 16px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--glass-border);
+  border-radius: 10px;
+  color: var(--text);
+  font-size: 14px;
+  outline: none;
+  transition: all .2s;
+}
+.employee-search-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(0,240,255,0.15);
+}
+.employee-list {
+  max-height: 200px;
+  overflow-y: auto;
+  margin-bottom: 16px;
+  border-radius: 10px;
+  border: 1px solid var(--glass-border);
+}
+.employee-list-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: all .15s;
+  border-bottom: 1px solid var(--glass-border);
+}
+.employee-list-item:last-child {
+  border-bottom: none;
+}
+.employee-list-item:hover {
+  background: rgba(0,240,255,0.1);
+}
+.employee-list-item .emp-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary), var(--tertiary));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 14px;
+  color: #fff;
+}
+.employee-list-item .emp-info {
+  flex: 1;
+  text-align: left;
+}
+.employee-list-item .emp-name {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text);
+}
+.employee-list-item .emp-dept {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.employee-list-empty {
+  padding: 24px;
+  text-align: center;
+  color: var(--text-muted);
+  font-style: italic;
+  font-size: 13px;
+}
+
+/* ========== EMPLOYEES VIEW ========== */
+.employee-stats-bar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.emp-stat-card {
+  background: var(--glass-bg);
+  backdrop-filter: var(--blur);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius);
+  padding: 16px;
+  text-align: center;
+  transition: all .2s;
+}
+.emp-stat-card:hover {
+  border-color: var(--primary);
+  box-shadow: 0 0 20px rgba(0,240,255,0.15);
+}
+.emp-stat-icon {
+  font-size: 24px;
+  margin-bottom: 8px;
+}
+.emp-stat-value {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--primary);
+}
+.emp-stat-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.employees-section, .tasks-section {
+  margin-bottom: 24px;
+}
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.section-header h3 {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.employees-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.employee-card {
+  background: var(--glass-bg);
+  backdrop-filter: var(--blur);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius);
+  padding: 20px;
+  transition: all .2s;
+  position: relative;
+}
+.employee-card:hover {
+  border-color: var(--primary);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(0,240,255,0.15);
+}
+.employee-card.inactive {
+  opacity: 0.6;
+}
+.employee-card-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+.employee-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary), var(--tertiary));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 18px;
+  color: #fff;
+  flex-shrink: 0;
+}
+.employee-info {
+  flex: 1;
+  min-width: 0;
+}
+.employee-name {
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.employee-dept {
+  font-size: 12px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.employee-status-badge {
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-weight: 600;
+}
+.employee-status-badge.active {
+  background: rgba(0,255,136,0.2);
+  color: var(--success);
+}
+.employee-status-badge.inactive {
+  background: rgba(255,23,68,0.2);
+  color: var(--danger);
+}
+.employee-card-body {
+  margin-bottom: 14px;
+}
+.employee-contact {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.employee-task-summary {
+  display: flex;
+  gap: 12px;
+  margin-top: 10px;
+}
+.emp-task-badge {
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.06);
+  color: var(--text-muted);
+}
+.emp-task-badge.pending {
+  background: rgba(255,170,0,0.15);
+  color: var(--warning);
+}
+.emp-task-badge.completed {
+  background: rgba(0,255,136,0.15);
+  color: var(--success);
+}
+.employee-card-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.employee-card-actions button {
+  flex: 1;
+  min-width: 80px;
+}
+
+/* ========== TASKS LIST ========== */
+.task-filters {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.tasks-list {
+  padding: 0;
+  max-height: 400px;
+  overflow-y: auto;
+}
+.task-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 16px;
+  border-bottom: 1px solid var(--glass-border);
+  transition: all .15s;
+}
+.task-item:last-child {
+  border-bottom: none;
+}
+.task-item:hover {
+  background: rgba(0,240,255,0.05);
+}
+.task-checkbox {
+  width: 22px;
+  height: 22px;
+  border: 2px solid var(--glass-border);
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all .2s;
+  margin-top: 2px;
+}
+.task-checkbox:hover {
+  border-color: var(--primary);
+}
+.task-checkbox.checked {
+  background: var(--success);
+  border-color: var(--success);
+}
+.task-checkbox.checked::after {
+  content: '✓';
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+}
+.task-content {
+  flex: 1;
+  min-width: 0;
+}
+.task-title {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+.task-item.completed .task-title {
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+.task-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.task-meta-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.task-priority {
+  padding: 2px 8px;
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 600;
+}
+.task-priority.high {
+  background: rgba(255,23,68,0.2);
+  color: var(--danger);
+}
+.task-priority.medium {
+  background: rgba(255,170,0,0.2);
+  color: var(--warning);
+}
+.task-priority.low {
+  background: rgba(0,255,136,0.2);
+  color: var(--success);
+}
+.task-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.tasks-empty {
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* ========== EMPLOYEE TASK DASHBOARD MODAL ========== */
+.emp-dash-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.emp-dash-greeting {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--primary);
+}
+.emp-dash-stats {
+  display: flex;
+  gap: 16px;
+}
+.emp-dash-stat {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+.emp-dash-stat strong {
+  color: var(--text);
+  font-weight: 700;
+}
+.emp-tasks-container {
+  max-height: 400px;
+  overflow-y: auto;
+}
+.emp-task-card {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+  transition: all .2s;
+}
+.emp-task-card:hover {
+  border-color: var(--primary);
+}
+.emp-task-card.completed {
+  opacity: 0.6;
+}
+.emp-task-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 8px;
+}
+.emp-task-title {
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--text);
+}
+.emp-task-card.completed .emp-task-title {
+  text-decoration: line-through;
+}
+.emp-task-desc {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+.emp-task-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.emp-task-info {
+  display: flex;
+  gap: 12px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.emp-task-actions {
+  display: flex;
+  gap: 8px;
+}
+.btn-task-status {
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .2s;
+  border: none;
+}
+.btn-start-task {
+  background: rgba(33,150,255,0.2);
+  color: #2196ff;
+}
+.btn-start-task:hover {
+  background: rgba(33,150,255,0.35);
+}
+.btn-complete-task {
+  background: rgba(0,255,136,0.2);
+  color: var(--success);
+}
+.btn-complete-task:hover {
+  background: rgba(0,255,136,0.35);
+}

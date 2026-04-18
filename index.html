@@ -4,6 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>FactoryFlow OS</title>
+  <!-- PWA Meta Tags -->
+  <meta name="description" content="Factory Job Management Dashboard - Track jobs through waiting, printing, assembly, and dispatch stages">
+  <meta name="theme-color" content="#00f0ff">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="FactoryFlow">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%230a0e1a' width='100' height='100' rx='20'/><text x='50' y='65' font-size='50' text-anchor='middle' fill='%2300f0ff'>🏭</text></svg>">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -64,6 +72,36 @@
       </div>
       <button class="btn-back-role" onclick="backToRoles()">&#8592; Back</button>
     </div>
+
+    <!-- Employee Login Section -->
+    <div id="employeeLoginSection" class="employee-login-section hidden">
+      <div class="employee-login-header">
+        <span class="employee-login-icon">👤</span>
+        <span class="employee-login-title">Employee Login</span>
+      </div>
+      <div class="employee-search-wrap">
+        <input type="text" id="employeeSearchInput" class="employee-search-input" placeholder="Type your name..." oninput="filterEmployeeList()" />
+      </div>
+      <div class="employee-list" id="employeeLoginList">
+        <!-- Employee options will be populated here -->
+      </div>
+      <button class="btn-back-role" onclick="backToRoles()">&#8592; Back to Roles</button>
+    </div>
+
+    <!-- Divider and Employee Login Button -->
+    <div id="employeeLoginBtn" class="employee-login-divider">
+      <div class="divider-line"></div>
+      <span class="divider-text">or</span>
+      <div class="divider-line"></div>
+    </div>
+    <button id="employeeLoginToggle" class="btn-employee-login" onclick="showEmployeeLogin()">
+      👤 Employee Login
+    </button>
+
+    <!-- PWA Install Button -->
+    <button id="pwaInstallBtn" class="btn-pwa-install hidden" onclick="installPWA()">
+      📲 Install App
+    </button>
   </div>
 </div>
 
@@ -90,6 +128,9 @@
       </button>
       <button class="nav-item" data-view="machines" onclick="switchView('machines')">
         <span class="nav-icon">⚙️</span><span class="nav-label">Machines</span><span class="nav-hint">5</span>
+      </button>
+      <button class="nav-item" data-view="employees" id="navEmployees" onclick="switchView('employees')">
+        <span class="nav-icon">👥</span><span class="nav-label">Employees</span><span class="nav-hint">6</span>
       </button>
     </nav>
     <div class="sidebar-footer">
@@ -267,6 +308,72 @@
         <div class="view-actions"><button class="btn-primary" onclick="openAddMachineModal()">&#10010; Add Machine</button></div>
       </div>
       <div class="machines-grid" id="machinesGrid"></div>
+    </div>
+
+    <!-- EMPLOYEES VIEW -->
+    <div id="viewEmployees" class="view hidden">
+      <div class="view-header">
+        <h2 class="view-title">👥 Employees &amp; Task Assignment</h2>
+        <div class="view-actions">
+          <button class="btn-primary" id="addEmployeeBtn" onclick="openEmployeeModal()">&#10010; Add Employee</button>
+        </div>
+      </div>
+      <!-- Employee Stats -->
+      <div class="employee-stats-bar">
+        <div class="emp-stat-card">
+          <div class="emp-stat-icon">👥</div>
+          <div class="emp-stat-value" id="empStatTotal">0</div>
+          <div class="emp-stat-label">Total Employees</div>
+        </div>
+        <div class="emp-stat-card">
+          <div class="emp-stat-icon">✅</div>
+          <div class="emp-stat-value" id="empStatActive">0</div>
+          <div class="emp-stat-label">Active</div>
+        </div>
+        <div class="emp-stat-card">
+          <div class="emp-stat-icon">📋</div>
+          <div class="emp-stat-value" id="empStatPendingTasks">0</div>
+          <div class="emp-stat-label">Pending Tasks</div>
+        </div>
+        <div class="emp-stat-card">
+          <div class="emp-stat-icon">✔️</div>
+          <div class="emp-stat-value" id="empStatCompletedTasks">0</div>
+          <div class="emp-stat-label">Completed Today</div>
+        </div>
+      </div>
+      <!-- Employees Grid -->
+      <div class="employees-section">
+        <div class="section-header">
+          <h3>👤 Employee List</h3>
+          <div class="search-wrap" style="min-width:200px">
+            <span class="search-icon-h">🔍</span>
+            <input type="text" id="empSearch" class="global-search" placeholder="Search employees…" oninput="renderEmployees()">
+          </div>
+        </div>
+        <div class="employees-grid" id="employeesGrid">
+          <!-- Employee cards will be populated here -->
+        </div>
+      </div>
+      <!-- Tasks Section -->
+      <div class="tasks-section">
+        <div class="section-header">
+          <h3>📋 All Tasks</h3>
+          <div class="task-filters">
+            <select id="taskFilterStatus" class="filter-select" onchange="renderTasks()">
+              <option value="">All Status</option>
+              <option value="pending">Pending</option>
+              <option value="in-progress">In Progress</option>
+              <option value="completed">Completed</option>
+            </select>
+            <select id="taskFilterEmployee" class="filter-select" onchange="renderTasks()">
+              <option value="">All Employees</option>
+            </select>
+          </div>
+        </div>
+        <div class="tasks-list glass" id="tasksList">
+          <!-- Tasks will be populated here -->
+        </div>
+      </div>
     </div>
 
   </main>
@@ -598,6 +705,133 @@
       <div class="modal-footer" style="margin-top:24px">
         <button class="btn-secondary" onclick="closeModal('settingsModal')">Cancel</button>
         <button class="btn-primary" onclick="saveSettings()">💾 Save Settings</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Employee Modal -->
+<div class="modal" id="employeeModal">
+  <div class="modal-content glass">
+    <div class="modal-header">
+      <h3 class="modal-title" id="employeeModalTitle">&#10010; Add Employee</h3>
+      <button class="modal-close" onclick="closeModal('employeeModal')">&#10005;</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="employeeEditId">
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Employee Name *</label>
+          <input type="text" class="form-input" id="employeeName" placeholder="e.g. John Smith">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Department</label>
+          <select class="form-input" id="employeeDepartment">
+            <option value="waiting">Waiting / Reception</option>
+            <option value="printing">Printing</option>
+            <option value="assembly">Assembly</option>
+            <option value="dispatch">Dispatch</option>
+            <option value="admin">Admin / Management</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input type="email" class="form-input" id="employeeEmail" placeholder="john@company.com">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Phone</label>
+          <input type="tel" class="form-input" id="employeePhone" placeholder="+1 234 567 890">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Status</label>
+          <select class="form-input" id="employeeStatus">
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Employee PIN (4 digits)</label>
+          <input type="text" class="form-input" id="employeePin" maxlength="4" placeholder="0000" pattern="[0-9]{4}">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick="closeModal('employeeModal')">Cancel</button>
+        <button class="btn-primary" onclick="saveEmployee()">💾 Save Employee</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Task Assignment Modal -->
+<div class="modal" id="taskModal">
+  <div class="modal-content glass">
+    <div class="modal-header">
+      <h3 class="modal-title" id="taskModalTitle">&#10010; Assign Task</h3>
+      <button class="modal-close" onclick="closeModal('taskModal')">&#10005;</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="taskEditId">
+      <div class="form-grid">
+        <div class="form-group form-full">
+          <label class="form-label">Task Title *</label>
+          <input type="text" class="form-input" id="taskTitle" placeholder="e.g. Complete job printing for Client X">
+        </div>
+        <div class="form-group form-full">
+          <label class="form-label">Description</label>
+          <textarea class="form-input" id="taskDescription" rows="3" placeholder="Detailed instructions for this task…"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Assign To *</label>
+          <select class="form-input" id="taskEmployee">
+            <!-- Options populated dynamically -->
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Priority</label>
+          <select class="form-input" id="taskPriority">
+            <option value="low">🟢 Low</option>
+            <option value="medium" selected>🟡 Medium</option>
+            <option value="high">🔴 High</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Due Date</label>
+          <input type="date" class="form-input" id="taskDueDate">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Related Job (Optional)</label>
+          <select class="form-input" id="taskRelatedJob">
+            <option value="">-- None --</option>
+            <!-- Options populated dynamically -->
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick="closeModal('taskModal')">Cancel</button>
+        <button class="btn-primary" onclick="saveTask()">💾 Save Task</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Employee Task Dashboard (for logged-in employees) -->
+<div class="modal" id="employeeTaskDashModal">
+  <div class="modal-content glass modal-lg">
+    <div class="modal-header">
+      <h3 class="modal-title" id="empTaskDashTitle">📋 My Tasks</h3>
+      <button class="modal-close" onclick="closeModal('employeeTaskDashModal')">&#10005;</button>
+    </div>
+    <div class="modal-body">
+      <div class="emp-dash-header">
+        <div class="emp-dash-greeting" id="empDashGreeting">Welcome!</div>
+        <div class="emp-dash-stats">
+          <span class="emp-dash-stat"><strong id="empDashPending">0</strong> Pending</span>
+          <span class="emp-dash-stat"><strong id="empDashInProgress">0</strong> In Progress</span>
+          <span class="emp-dash-stat"><strong id="empDashCompleted">0</strong> Completed</span>
+        </div>
+      </div>
+      <div class="emp-tasks-container" id="empTasksContainer">
+        <!-- Employee's tasks will be shown here -->
       </div>
     </div>
   </div>

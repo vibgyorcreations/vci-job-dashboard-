@@ -11,6 +11,8 @@ let appData = {
   machines: [],
   categories: [],
   notifications: [],
+  employees: [],
+  tasks: [],
   settings: { companyName:'FactoryFlow OS', companyLogo:'', driveFolderId:'', theme:'dark', accentColor:'#00f0ff' },
   pins: { admin:'1234', waiting:'1111', printing:'2222', assembly:'3333', dispatch:'4444' }
 };
@@ -26,6 +28,8 @@ let printJobId   = null;
 let clockTimer   = null;
 let selectedMaterials = [];   // multi-material picker state
 let invStockFilter = 'all';   // inventory tab filter: 'all' | 'instock' | 'low' | 'out'
+let currentEmployee = null;   // logged-in employee (for employee login)
+let deferredPWAPrompt = null; // PWA install prompt
 const SESSION_TIMEOUT  = 15 * 60 * 1000; // 15 min inactivity → logout
 const SESSION_WARN     = 12 * 60 * 1000; // warn at 12 min mark (3 min before timeout)
 
@@ -34,14 +38,15 @@ const ROLE_PERMISSIONS = {
   admin:    {
     canCreateJob:true, canEditJob:true, canDeleteJob:true, canDuplicateJob:true, canSplitJob:true,
     canMoveToPrinting:true, canMoveToAssembly:true, canMoveToDispatch:true, canArchive:true,
-    canManageInventory:true, canManageMachines:true, canManageSettings:true,
-    canViewDashboard:true, canViewArchive:true, canViewAnalytics:true, canViewInventory:true, canViewMachines:true,
-    canStockIn:true, canStockOut:true, canStockAdjust:true, canAssignMachine:true
+    canManageInventory:true, canManageMachines:true, canManageSettings:true, canManageEmployees:true,
+    canViewDashboard:true, canViewArchive:true, canViewAnalytics:true, canViewInventory:true, canViewMachines:true, canViewEmployees:true,
+    canStockIn:true, canStockOut:true, canStockAdjust:true, canAssignMachine:true, canAssignTask:true
   },
   waiting:  { canCreateJob:true, canViewDashboard:true, canViewInventory:true, canStockOut:true },
   printing: { canMoveToPrinting:true, canMoveToAssembly:true, canViewDashboard:true, canViewInventory:true, canStockOut:true, canAssignMachine:true },
   assembly: { canMoveToAssembly:true, canMoveToDispatch:true, canViewDashboard:true, canViewInventory:true, canStockOut:true },
-  dispatch: { canMoveToDispatch:true, canArchive:true, canViewDashboard:true, canViewArchive:true }
+  dispatch: { canMoveToDispatch:true, canArchive:true, canViewDashboard:true, canViewArchive:true },
+  employee: { canViewDashboard:true }  // Employee role has minimal permissions
 };
 function can(perm){ return !!(currentRole && ROLE_PERMISSIONS[currentRole] && ROLE_PERMISSIONS[currentRole][perm]); }
 
@@ -51,7 +56,8 @@ const ROLE_COLUMNS = {
   waiting:  ['waiting'],
   printing: ['printing'],
   assembly: ['assembly'],
-  dispatch: ['dispatch']
+  dispatch: ['dispatch'],
+  employee: ['waiting','printing','assembly','dispatch']  // Employees can see all but not act
 };
 
 // ========== CLOUD SYNC ==========
@@ -85,6 +91,8 @@ function loadLocal(){
       if(parsed.machines && parsed.machines.length) appData.machines = parsed.machines;
       if(parsed.categories) appData.categories = parsed.categories;
       if(parsed.notifications) appData.notifications = parsed.notifications;
+      if(parsed.employees) appData.employees = parsed.employees;
+      if(parsed.tasks) appData.tasks = parsed.tasks;
       if(parsed.settings)  Object.assign(appData.settings, parsed.settings);
       if(parsed.pins)      Object.assign(appData.pins, parsed.pins);
     }
@@ -92,6 +100,8 @@ function loadLocal(){
   if(!appData.machines || !appData.machines.length) appData.machines = defaultMachines();
   if(!appData.categories) appData.categories = [];
   if(!appData.notifications) appData.notifications = [];
+  if(!appData.employees) appData.employees = [];
+  if(!appData.tasks) appData.tasks = [];
 }
 function defaultMachines(){
   return [
@@ -126,6 +136,7 @@ document.addEventListener('DOMContentLoaded', () => {
     try{
       const s = JSON.parse(sess);
       currentRole = s.role;
+      if(s.employeeId) currentEmployee = appData.employees.find(e => e.id === s.employeeId) || null;
       showApp();
     } catch(e){ showLogin(); }
   } else {
@@ -149,6 +160,17 @@ document.addEventListener('DOMContentLoaded', () => {
   const rTo   = document.getElementById('reportDateTo');
   if(rFrom) rFrom.value = weekAgo;
   if(rTo)   rTo.value   = today;
+
+  // Register Service Worker for PWA
+  registerServiceWorker();
+  
+  // Listen for PWA install prompt
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPWAPrompt = e;
+    const btn = document.getElementById('pwaInstallBtn');
+    if(btn) btn.classList.remove('hidden');
+  });
 });
 
 // ========== CLOCK ==========
@@ -1712,4 +1734,631 @@ function downloadCSV(filename, headers, rows){
   a.download = filename;
   a.click();
   URL.revokeObjectURL(a.href);
+}
+
+// ========== PWA SERVICE WORKER ==========
+function registerServiceWorker(){
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.register('/service-worker.js')
+      .then(reg => console.log('FactoryFlow OS: Service Worker registered', reg.scope))
+      .catch(err => console.log('FactoryFlow OS: Service Worker registration failed', err));
+  }
+}
+
+function installPWA(){
+  if(!deferredPWAPrompt) return;
+  deferredPWAPrompt.prompt();
+  deferredPWAPrompt.userChoice.then(choice => {
+    if(choice.outcome === 'accepted'){
+      showToast('✅ App installed successfully!', 'success');
+    }
+    deferredPWAPrompt = null;
+    const btn = document.getElementById('pwaInstallBtn');
+    if(btn) btn.classList.add('hidden');
+  });
+}
+
+// ========== EMPLOYEE LOGIN ==========
+function showEmployeeLogin(){
+  document.getElementById('roleSelect').classList.add('hidden');
+  document.getElementById('pinEntry').classList.add('hidden');
+  document.getElementById('employeeLoginSection').classList.remove('hidden');
+  document.getElementById('employeeLoginBtn').classList.add('hidden');
+  document.getElementById('employeeLoginToggle').classList.add('hidden');
+  renderEmployeeLoginList();
+}
+
+function backToRolesFromEmployee(){
+  document.getElementById('employeeLoginSection').classList.add('hidden');
+  document.getElementById('employeeLoginBtn').classList.remove('hidden');
+  document.getElementById('employeeLoginToggle').classList.remove('hidden');
+  backToRoles();
+}
+
+function filterEmployeeList(){
+  renderEmployeeLoginList();
+}
+
+function renderEmployeeLoginList(){
+  const search = (document.getElementById('employeeSearchInput')?.value || '').toLowerCase();
+  const list = document.getElementById('employeeLoginList');
+  if(!list) return;
+  
+  const activeEmployees = appData.employees.filter(e => e.status === 'active');
+  const filtered = activeEmployees.filter(e => 
+    e.name.toLowerCase().includes(search) || 
+    (e.department || '').toLowerCase().includes(search)
+  );
+  
+  if(filtered.length === 0){
+    list.innerHTML = `<div class="employee-list-empty">${activeEmployees.length === 0 ? 'No employees added yet. Admin can add employees in the Employees section.' : 'No employees match your search.'}</div>`;
+    return;
+  }
+  
+  list.innerHTML = filtered.map(emp => `
+    <div class="employee-list-item" onclick="selectEmployeeLogin('${emp.id}')">
+      <div class="emp-avatar">${getInitials(emp.name)}</div>
+      <div class="emp-info">
+        <div class="emp-name">${escHtml(emp.name)}</div>
+        <div class="emp-dept">${getDepartmentName(emp.department)}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function selectEmployeeLogin(empId){
+  const emp = appData.employees.find(e => e.id === empId);
+  if(!emp) return;
+  
+  // If employee has a PIN, show PIN entry
+  if(emp.pin && emp.pin.length === 4){
+    pendingRole = 'employee';
+    currentEmployee = emp;
+    pinBuffer = '';
+    updatePinDots();
+    document.getElementById('pinRoleLabel').textContent = '👤 ' + emp.name + ' — Enter PIN';
+    document.getElementById('employeeLoginSection').classList.add('hidden');
+    document.getElementById('pinEntry').classList.remove('hidden');
+    document.getElementById('pinError').classList.add('hidden');
+  } else {
+    // No PIN, log in directly
+    loginAsEmployee(emp);
+  }
+}
+
+function loginAsEmployee(emp){
+  currentRole = 'employee';
+  currentEmployee = emp;
+  sessionStorage.setItem('ffos_session', JSON.stringify({
+    role: 'employee',
+    employeeId: emp.id,
+    ts: Date.now()
+  }));
+  showApp();
+  // Show employee task dashboard
+  setTimeout(() => openEmployeeTaskDashboard(), 500);
+}
+
+function getInitials(name){
+  return name.split(' ').map(w => w[0]).join('').toUpperCase().substring(0, 2);
+}
+
+function getDepartmentName(dept){
+  const names = {
+    'waiting': 'Waiting / Reception',
+    'printing': 'Printing',
+    'assembly': 'Assembly',
+    'dispatch': 'Dispatch',
+    'admin': 'Admin / Management'
+  };
+  return names[dept] || dept || 'General';
+}
+
+// ========== EMPLOYEE MANAGEMENT (Admin) ==========
+function renderEmployees(){
+  const search = (document.getElementById('empSearch')?.value || '').toLowerCase();
+  const grid = document.getElementById('employeesGrid');
+  if(!grid) return;
+  
+  const filtered = appData.employees.filter(e =>
+    e.name.toLowerCase().includes(search) ||
+    (e.department || '').toLowerCase().includes(search) ||
+    (e.email || '').toLowerCase().includes(search)
+  );
+  
+  if(filtered.length === 0){
+    grid.innerHTML = `<div class="tasks-empty" style="grid-column:1/-1">No employees found. Click "Add Employee" to create one.</div>`;
+    updateEmployeeStats();
+    return;
+  }
+  
+  grid.innerHTML = filtered.map(emp => {
+    const pendingTasks = appData.tasks.filter(t => t.assignedTo === emp.id && t.status !== 'completed').length;
+    const completedTasks = appData.tasks.filter(t => t.assignedTo === emp.id && t.status === 'completed').length;
+    
+    return `
+    <div class="employee-card ${emp.status === 'inactive' ? 'inactive' : ''}">
+      <div class="employee-card-header">
+        <div class="employee-avatar">${getInitials(emp.name)}</div>
+        <div class="employee-info">
+          <div class="employee-name">${escHtml(emp.name)}</div>
+          <div class="employee-dept">
+            ${getDepartmentName(emp.department)}
+            <span class="employee-status-badge ${emp.status}">${emp.status}</span>
+          </div>
+        </div>
+      </div>
+      <div class="employee-card-body">
+        ${emp.email ? `<div class="employee-contact">📧 ${escHtml(emp.email)}</div>` : ''}
+        ${emp.phone ? `<div class="employee-contact">📱 ${escHtml(emp.phone)}</div>` : ''}
+        <div class="employee-task-summary">
+          <span class="emp-task-badge pending">📋 ${pendingTasks} pending</span>
+          <span class="emp-task-badge completed">✔️ ${completedTasks} done</span>
+        </div>
+      </div>
+      <div class="employee-card-actions">
+        <button class="btn-secondary" onclick="openTaskModal('${emp.id}')">📋 Assign Task</button>
+        <button class="btn-secondary" onclick="editEmployee('${emp.id}')">✏️ Edit</button>
+        <button class="btn-secondary" style="color:var(--danger)" onclick="deleteEmployee('${emp.id}')">🗑️</button>
+      </div>
+    </div>
+  `;
+  }).join('');
+  
+  updateEmployeeStats();
+}
+
+function updateEmployeeStats(){
+  const total = appData.employees.length;
+  const active = appData.employees.filter(e => e.status === 'active').length;
+  const pendingTasks = appData.tasks.filter(t => t.status !== 'completed').length;
+  const today = new Date().toISOString().split('T')[0];
+  const completedToday = appData.tasks.filter(t => 
+    t.status === 'completed' && 
+    t.completedAt && 
+    t.completedAt.startsWith(today)
+  ).length;
+  
+  const el1 = document.getElementById('empStatTotal');
+  const el2 = document.getElementById('empStatActive');
+  const el3 = document.getElementById('empStatPendingTasks');
+  const el4 = document.getElementById('empStatCompletedTasks');
+  if(el1) el1.textContent = total;
+  if(el2) el2.textContent = active;
+  if(el3) el3.textContent = pendingTasks;
+  if(el4) el4.textContent = completedToday;
+}
+
+function openEmployeeModal(emp){
+  document.getElementById('employeeEditId').value = emp ? emp.id : '';
+  document.getElementById('employeeModalTitle').textContent = emp ? '✏️ Edit Employee' : '➕ Add Employee';
+  document.getElementById('employeeName').value = emp ? emp.name : '';
+  document.getElementById('employeeDepartment').value = emp ? (emp.department || 'waiting') : 'waiting';
+  document.getElementById('employeeEmail').value = emp ? (emp.email || '') : '';
+  document.getElementById('employeePhone').value = emp ? (emp.phone || '') : '';
+  document.getElementById('employeeStatus').value = emp ? (emp.status || 'active') : 'active';
+  document.getElementById('employeePin').value = emp ? (emp.pin || '') : '';
+  openModal('employeeModal');
+}
+
+function editEmployee(empId){
+  const emp = appData.employees.find(e => e.id === empId);
+  if(emp) openEmployeeModal(emp);
+}
+
+function saveEmployee(){
+  const editId = document.getElementById('employeeEditId').value;
+  const name = document.getElementById('employeeName').value.trim();
+  if(!name){ showToast('❌ Employee name is required', 'error'); return; }
+  
+  const pin = document.getElementById('employeePin').value.trim();
+  if(pin && !/^\d{4}$/.test(pin)){
+    showToast('❌ PIN must be exactly 4 digits', 'error');
+    return;
+  }
+  
+  const isEdit = !!editId;
+  let emp;
+  if(isEdit){
+    emp = appData.employees.find(e => e.id === editId);
+    if(!emp){ showToast('❌ Employee not found', 'error'); return; }
+  } else {
+    emp = {
+      id: 'EMP-' + Date.now(),
+      createdAt: new Date().toISOString()
+    };
+    appData.employees.push(emp);
+  }
+  
+  emp.name = name;
+  emp.department = document.getElementById('employeeDepartment').value;
+  emp.email = document.getElementById('employeeEmail').value.trim();
+  emp.phone = document.getElementById('employeePhone').value.trim();
+  emp.status = document.getElementById('employeeStatus').value;
+  emp.pin = pin;
+  
+  saveLocal();
+  closeModal('employeeModal');
+  showToast(isEdit ? '✅ Employee updated' : '✅ Employee added: ' + name, 'success');
+  renderEmployees();
+  renderTasks();
+}
+
+function deleteEmployee(empId){
+  const emp = appData.employees.find(e => e.id === empId);
+  if(!emp) return;
+  if(!confirm('Delete employee "' + emp.name + '"? This will also remove all their tasks.')) return;
+  
+  appData.employees = appData.employees.filter(e => e.id !== empId);
+  appData.tasks = appData.tasks.filter(t => t.assignedTo !== empId);
+  saveLocal();
+  showToast('🗑️ Employee deleted', 'warning');
+  renderEmployees();
+  renderTasks();
+}
+
+// ========== TASK MANAGEMENT ==========
+function renderTasks(){
+  const statusFilter = document.getElementById('taskFilterStatus')?.value || '';
+  const employeeFilter = document.getElementById('taskFilterEmployee')?.value || '';
+  const list = document.getElementById('tasksList');
+  if(!list) return;
+  
+  // Populate employee filter dropdown
+  const empSelect = document.getElementById('taskFilterEmployee');
+  if(empSelect){
+    const currentVal = empSelect.value;
+    empSelect.innerHTML = '<option value="">All Employees</option>' +
+      appData.employees.map(e => `<option value="${e.id}">${escHtml(e.name)}</option>`).join('');
+    empSelect.value = currentVal;
+  }
+  
+  let filtered = [...appData.tasks];
+  if(statusFilter) filtered = filtered.filter(t => t.status === statusFilter);
+  if(employeeFilter) filtered = filtered.filter(t => t.assignedTo === employeeFilter);
+  
+  // Sort: pending first, then in-progress, then completed
+  const statusOrder = { 'pending': 0, 'in-progress': 1, 'completed': 2 };
+  filtered.sort((a, b) => (statusOrder[a.status] || 0) - (statusOrder[b.status] || 0));
+  
+  if(filtered.length === 0){
+    list.innerHTML = `<div class="tasks-empty">No tasks found. Assign tasks to employees using the "Assign Task" button.</div>`;
+    return;
+  }
+  
+  list.innerHTML = filtered.map(task => {
+    const emp = appData.employees.find(e => e.id === task.assignedTo);
+    const job = task.relatedJob ? appData.jobs.find(j => j.id === task.relatedJob) : null;
+    const isCompleted = task.status === 'completed';
+    
+    return `
+    <div class="task-item ${isCompleted ? 'completed' : ''}">
+      <div class="task-checkbox ${isCompleted ? 'checked' : ''}" onclick="toggleTaskComplete('${task.id}')"></div>
+      <div class="task-content">
+        <div class="task-title">${escHtml(task.title)}</div>
+        <div class="task-meta">
+          <span class="task-meta-item">👤 ${emp ? escHtml(emp.name) : 'Unassigned'}</span>
+          ${task.dueDate ? `<span class="task-meta-item">📅 ${task.dueDate}</span>` : ''}
+          ${job ? `<span class="task-meta-item">📋 ${escHtml(job.name || job.id)}</span>` : ''}
+          <span class="task-priority ${task.priority}">${task.priority.toUpperCase()}</span>
+        </div>
+      </div>
+      <div class="task-actions">
+        <button class="btn-icon" onclick="editTask('${task.id}')" title="Edit">✏️</button>
+        <button class="btn-icon" onclick="deleteTask('${task.id}')" title="Delete" style="color:var(--danger)">🗑️</button>
+      </div>
+    </div>
+  `;
+  }).join('');
+}
+
+function openTaskModal(preselectedEmpId){
+  document.getElementById('taskEditId').value = '';
+  document.getElementById('taskModalTitle').textContent = '➕ Assign Task';
+  document.getElementById('taskTitle').value = '';
+  document.getElementById('taskDescription').value = '';
+  document.getElementById('taskPriority').value = 'medium';
+  document.getElementById('taskDueDate').value = '';
+  
+  // Populate employee dropdown
+  const empSelect = document.getElementById('taskEmployee');
+  empSelect.innerHTML = appData.employees.filter(e => e.status === 'active').map(e =>
+    `<option value="${e.id}">${escHtml(e.name)} (${getDepartmentName(e.department)})</option>`
+  ).join('');
+  if(preselectedEmpId) empSelect.value = preselectedEmpId;
+  
+  // Populate job dropdown
+  const jobSelect = document.getElementById('taskRelatedJob');
+  jobSelect.innerHTML = '<option value="">-- None --</option>' +
+    appData.jobs.map(j => `<option value="${j.id}">${escHtml(j.id + ' - ' + (j.name || j.client))}</option>`).join('');
+  
+  openModal('taskModal');
+}
+
+function editTask(taskId){
+  const task = appData.tasks.find(t => t.id === taskId);
+  if(!task) return;
+  
+  document.getElementById('taskEditId').value = task.id;
+  document.getElementById('taskModalTitle').textContent = '✏️ Edit Task';
+  document.getElementById('taskTitle').value = task.title;
+  document.getElementById('taskDescription').value = task.description || '';
+  document.getElementById('taskPriority').value = task.priority || 'medium';
+  document.getElementById('taskDueDate').value = task.dueDate || '';
+  
+  // Populate employee dropdown
+  const empSelect = document.getElementById('taskEmployee');
+  empSelect.innerHTML = appData.employees.filter(e => e.status === 'active').map(e =>
+    `<option value="${e.id}">${escHtml(e.name)} (${getDepartmentName(e.department)})</option>`
+  ).join('');
+  empSelect.value = task.assignedTo;
+  
+  // Populate job dropdown
+  const jobSelect = document.getElementById('taskRelatedJob');
+  jobSelect.innerHTML = '<option value="">-- None --</option>' +
+    appData.jobs.map(j => `<option value="${j.id}">${escHtml(j.id + ' - ' + (j.name || j.client))}</option>`).join('');
+  jobSelect.value = task.relatedJob || '';
+  
+  openModal('taskModal');
+}
+
+function saveTask(){
+  const editId = document.getElementById('taskEditId').value;
+  const title = document.getElementById('taskTitle').value.trim();
+  const assignedTo = document.getElementById('taskEmployee').value;
+  
+  if(!title){ showToast('❌ Task title is required', 'error'); return; }
+  if(!assignedTo){ showToast('❌ Please select an employee', 'error'); return; }
+  
+  const isEdit = !!editId;
+  let task;
+  if(isEdit){
+    task = appData.tasks.find(t => t.id === editId);
+    if(!task){ showToast('❌ Task not found', 'error'); return; }
+  } else {
+    task = {
+      id: 'TASK-' + Date.now(),
+      status: 'pending',
+      createdAt: new Date().toISOString()
+    };
+    appData.tasks.push(task);
+  }
+  
+  task.title = title;
+  task.description = document.getElementById('taskDescription').value.trim();
+  task.assignedTo = assignedTo;
+  task.priority = document.getElementById('taskPriority').value;
+  task.dueDate = document.getElementById('taskDueDate').value;
+  task.relatedJob = document.getElementById('taskRelatedJob').value || null;
+  
+  saveLocal();
+  closeModal('taskModal');
+  showToast(isEdit ? '✅ Task updated' : '✅ Task assigned', 'success');
+  renderTasks();
+  renderEmployees();
+}
+
+function deleteTask(taskId){
+  if(!confirm('Delete this task?')) return;
+  appData.tasks = appData.tasks.filter(t => t.id !== taskId);
+  saveLocal();
+  showToast('🗑️ Task deleted', 'warning');
+  renderTasks();
+  renderEmployees();
+}
+
+function toggleTaskComplete(taskId){
+  const task = appData.tasks.find(t => t.id === taskId);
+  if(!task) return;
+  
+  if(task.status === 'completed'){
+    task.status = 'pending';
+    task.completedAt = null;
+  } else {
+    task.status = 'completed';
+    task.completedAt = new Date().toISOString();
+  }
+  
+  saveLocal();
+  renderTasks();
+  renderEmployees();
+  showToast(task.status === 'completed' ? '✅ Task completed!' : '📋 Task reopened', 'success');
+}
+
+// ========== EMPLOYEE TASK DASHBOARD ==========
+function openEmployeeTaskDashboard(){
+  if(!currentEmployee) return;
+  
+  const emp = currentEmployee;
+  const empTasks = appData.tasks.filter(t => t.assignedTo === emp.id);
+  const pending = empTasks.filter(t => t.status === 'pending').length;
+  const inProgress = empTasks.filter(t => t.status === 'in-progress').length;
+  const completed = empTasks.filter(t => t.status === 'completed').length;
+  
+  document.getElementById('empTaskDashTitle').textContent = '📋 ' + emp.name + "'s Tasks";
+  document.getElementById('empDashGreeting').textContent = 'Welcome, ' + emp.name + '!';
+  document.getElementById('empDashPending').textContent = pending;
+  document.getElementById('empDashInProgress').textContent = inProgress;
+  document.getElementById('empDashCompleted').textContent = completed;
+  
+  const container = document.getElementById('empTasksContainer');
+  if(empTasks.length === 0){
+    container.innerHTML = `<div class="tasks-empty">You have no tasks assigned. Check back later!</div>`;
+  } else {
+    // Sort: in-progress first, then pending, then completed
+    const statusOrder = { 'in-progress': 0, 'pending': 1, 'completed': 2 };
+    empTasks.sort((a, b) => (statusOrder[a.status] || 0) - (statusOrder[b.status] || 0));
+    
+    container.innerHTML = empTasks.map(task => {
+      const job = task.relatedJob ? appData.jobs.find(j => j.id === task.relatedJob) : null;
+      const isCompleted = task.status === 'completed';
+      const isInProgress = task.status === 'in-progress';
+      
+      return `
+      <div class="emp-task-card ${isCompleted ? 'completed' : ''}">
+        <div class="emp-task-header">
+          <div class="emp-task-title">${escHtml(task.title)}</div>
+          <span class="task-priority ${task.priority}">${task.priority.toUpperCase()}</span>
+        </div>
+        ${task.description ? `<div class="emp-task-desc">${escHtml(task.description)}</div>` : ''}
+        <div class="emp-task-footer">
+          <div class="emp-task-info">
+            ${task.dueDate ? `<span>📅 Due: ${task.dueDate}</span>` : ''}
+            ${job ? `<span>📋 Job: ${escHtml(job.name || job.id)}</span>` : ''}
+            <span>Status: ${task.status}</span>
+          </div>
+          <div class="emp-task-actions">
+            ${!isCompleted && !isInProgress ? `<button class="btn-task-status btn-start-task" onclick="startEmployeeTask('${task.id}')">▶️ Start</button>` : ''}
+            ${isInProgress ? `<button class="btn-task-status btn-complete-task" onclick="completeEmployeeTask('${task.id}')">✓ Complete</button>` : ''}
+            ${isCompleted ? `<span style="color:var(--success);font-weight:600">✓ Done</span>` : ''}
+          </div>
+        </div>
+      </div>
+    `;
+    }).join('');
+  }
+  
+  openModal('employeeTaskDashModal');
+}
+
+function startEmployeeTask(taskId){
+  const task = appData.tasks.find(t => t.id === taskId);
+  if(!task) return;
+  task.status = 'in-progress';
+  task.startedAt = new Date().toISOString();
+  saveLocal();
+  showToast('▶️ Task started!', 'info');
+  openEmployeeTaskDashboard();
+}
+
+function completeEmployeeTask(taskId){
+  const task = appData.tasks.find(t => t.id === taskId);
+  if(!task) return;
+  task.status = 'completed';
+  task.completedAt = new Date().toISOString();
+  saveLocal();
+  showToast('✅ Task completed!', 'success');
+  openEmployeeTaskDashboard();
+}
+
+// ========== UPDATE SWITCH VIEW FOR EMPLOYEES ==========
+const originalSwitchView = typeof switchView !== 'undefined' ? switchView : null;
+function switchViewWithEmployees(view){
+  // Hide employees nav if not admin
+  const navEmp = document.getElementById('navEmployees');
+  if(navEmp) navEmp.style.display = can('canViewEmployees') ? '' : 'none';
+  
+  // Handle employees view
+  if(view === 'employees'){
+    if(!can('canViewEmployees')){
+      showToast('❌ Access denied', 'error');
+      return;
+    }
+    renderEmployees();
+    renderTasks();
+  }
+  
+  // Call original or handle view switch
+  currentView = view;
+  document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
+  const viewEl = document.getElementById('view'+view.charAt(0).toUpperCase()+view.slice(1));
+  if(viewEl) viewEl.classList.remove('hidden');
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const navEl = document.querySelector(`.nav-item[data-view="${view}"]`);
+  if(navEl) navEl.classList.add('active');
+  document.getElementById('headerTitle').textContent = {
+    dashboard:'Dashboard', archive:'Archive', analytics:'Analytics',
+    inventory:'Inventory', machines:'Machines', employees:'Employees'
+  }[view] || view;
+}
+
+// Override switchView if it exists
+if(typeof window !== 'undefined'){
+  const _origSwitch = window.switchView;
+  window.switchView = function(view){
+    switchViewWithEmployees(view);
+  };
+}
+
+// ========== APPLY ROLE UI UPDATE FOR EMPLOYEES NAV ==========
+const _originalApplyRoleUI = typeof applyRoleUI !== 'undefined' ? applyRoleUI : null;
+function applyRoleUIWithEmployees(){
+  // Show/hide Employees nav based on permissions
+  const navEmp = document.getElementById('navEmployees');
+  if(navEmp) navEmp.style.display = can('canViewEmployees') ? '' : 'none';
+  
+  // If employee role, show task dashboard button in session area
+  if(currentRole === 'employee' && currentEmployee){
+    const sessionRole = document.getElementById('sessionRole');
+    if(sessionRole) sessionRole.textContent = currentEmployee.name;
+  }
+}
+
+// Hook into the page load
+document.addEventListener('DOMContentLoaded', () => {
+  // Wait a bit for other scripts to load
+  setTimeout(() => {
+    const origApplyRoleUI = window.applyRoleUI;
+    if(origApplyRoleUI){
+      window.applyRoleUI = function(){
+        origApplyRoleUI();
+        applyRoleUIWithEmployees();
+      };
+    }
+  }, 100);
+});
+
+// ========== UPDATE CHECK PIN FOR EMPLOYEE LOGIN ==========
+const _origCheckPin = typeof checkPin !== 'undefined' ? checkPin : null;
+function checkPinWithEmployee(){
+  if(pendingRole === 'employee' && currentEmployee){
+    const expected = currentEmployee.pin || '0000';
+    if(pinBuffer === expected){
+      loginAsEmployee(currentEmployee);
+    } else {
+      document.getElementById('pinError').classList.remove('hidden');
+      pinBuffer = '';
+      updatePinDots();
+      setTimeout(() => document.getElementById('pinError').classList.add('hidden'), 2500);
+    }
+  } else {
+    // Call original checkPin for roles
+    const expected = appData.pins[pendingRole] || '0000';
+    if(pinBuffer === expected){
+      currentRole = pendingRole;
+      sessionStorage.setItem('ffos_session', JSON.stringify({role:currentRole, ts: Date.now()}));
+      showApp();
+    } else {
+      document.getElementById('pinError').classList.remove('hidden');
+      pinBuffer = '';
+      updatePinDots();
+      setTimeout(() => document.getElementById('pinError').classList.add('hidden'), 2500);
+    }
+  }
+}
+
+// Override checkPin
+if(typeof window !== 'undefined'){
+  window.checkPin = checkPinWithEmployee;
+}
+
+// ========== UPDATE backToRoles TO RESET EMPLOYEE LOGIN ==========
+const _origBackToRoles = typeof backToRoles !== 'undefined' ? backToRoles : null;
+function backToRolesWithEmployee(){
+  pendingRole = null;
+  pinBuffer = '';
+  currentEmployee = null;
+  document.getElementById('pinEntry').classList.add('hidden');
+  document.getElementById('employeeLoginSection').classList.add('hidden');
+  document.getElementById('roleSelect').classList.remove('hidden');
+  document.getElementById('employeeLoginBtn').classList.remove('hidden');
+  document.getElementById('employeeLoginToggle').classList.remove('hidden');
+  document.getElementById('pinError').classList.add('hidden');
+  document.getElementById('employeeSearchInput').value = '';
+  updatePinDots();
+}
+
+// Override backToRoles
+if(typeof window !== 'undefined'){
+  window.backToRoles = backToRolesWithEmployee;
 }
