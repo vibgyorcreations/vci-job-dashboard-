@@ -576,8 +576,37 @@ body::before {
 
 .job-field { font-size:12px; color:var(--text-muted); margin-bottom:5px; line-height:1.5; }
 .job-field strong { color:var(--text); font-weight:700; min-width:62px; display:inline-block; font-size:12px; }
+/* View File button in the job card */
+.job-file-row { margin-top:4px; margin-bottom:2px; }
+.btn-view-file {
+  display:inline-flex; align-items:center; gap:5px;
+  padding:6px 12px; border:none; border-radius:8px;
+  background:linear-gradient(135deg,rgba(0,240,255,0.18),rgba(0,160,220,0.22));
+  color:var(--primary); border:1px solid rgba(0,240,255,0.30);
+  font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
+  font-size:11px; font-weight:700; cursor:pointer; transition:all .15s;
+}
+.btn-view-file:hover {
+  background:linear-gradient(135deg,rgba(0,240,255,0.30),rgba(0,160,220,0.35));
+  box-shadow:0 0 12px rgba(0,240,255,0.35); transform:translateY(-1px);
+}
+.btn-view-file .jab-icon { font-size:13px; }
+.btn-view-file .jab-label { letter-spacing:.2px; }
+/* Notes section */
 .job-notes-wrap { margin-top:10px; padding:8px 10px; background:rgba(255,255,255,0.03); border-radius:8px; border:1px solid var(--glass-border); }
-.notes-label { font-size:9px; text-transform:uppercase; letter-spacing:.8px; color:var(--text-muted); margin-bottom:4px; }
+.notes-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:5px; }
+.notes-label { font-size:10px; text-transform:uppercase; letter-spacing:.8px; color:var(--text-muted); font-weight:700; }
+.btn-notes-edit {
+  display:inline-flex; align-items:center; gap:4px;
+  padding:3px 8px; border:1px solid var(--glass-border);
+  border-radius:6px; background:rgba(255,255,255,0.05);
+  color:var(--text-muted);
+  font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
+  font-size:10px; font-weight:700; cursor:pointer; transition:all .15s;
+}
+.btn-notes-edit:hover { background:rgba(0,240,255,0.1); color:var(--primary); border-color:var(--primary); }
+.btn-notes-edit .jab-icon { font-size:11px; }
+.btn-notes-edit .jab-label { letter-spacing:.1px; }
 .notes-text { font-size:11px; color:var(--text-muted); font-style:italic; cursor:pointer; min-height:14px; }
 .notes-text:hover { color:var(--primary); }
 .notes-edit-input {
@@ -911,6 +940,10 @@ body::before {
 [data-theme="light"] .badge-rework{ background:rgba(217,0,48,.12);  color:#b00030; border-color:rgba(217,0,48,.3); }
 
 [data-theme="light"] .job-notes-wrap { background:rgba(0,70,200,0.04); border-color:rgba(90,110,220,0.18); }
+[data-theme="light"] .btn-notes-edit { background:rgba(0,112,240,0.07); color:#3a4580; border-color:rgba(90,110,220,0.25); }
+[data-theme="light"] .btn-notes-edit:hover { background:rgba(0,112,240,0.14); color:#0050c0; border-color:#0070f0; }
+[data-theme="light"] .btn-view-file { background:linear-gradient(135deg,rgba(0,112,240,0.12),rgba(0,80,180,0.16)); color:#0050c0; border-color:rgba(0,112,240,0.30); }
+[data-theme="light"] .btn-view-file:hover { background:linear-gradient(135deg,rgba(0,112,240,0.22),rgba(0,80,180,0.28)); box-shadow:0 0 10px rgba(0,112,240,0.22); }
 
 /* Buttons in light mode */
 [data-theme="light"] .btn-edit-card  { background:rgba(90,0,204,.10); color:#5a00cc; border-color:rgba(90,0,204,.28); }

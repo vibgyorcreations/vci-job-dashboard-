@@ -523,14 +523,17 @@ function jobCardHTML(job, colStatus){
     <div class="job-field"><strong>Qty:</strong> ${qty}&nbsp;&nbsp;<strong>Sq.Ft:</strong> ${sqft}</div>
     <div class="job-field"><strong>Material:</strong> <span style="display:inline-flex;flex-wrap:wrap;gap:4px;vertical-align:middle">${matDisplay}</span>${finish?' &nbsp;|&nbsp; <strong>Finish:</strong> '+finish:''}</div>
     ${approvalBy ? '<div class="job-field"><strong>Approval:</strong> '+approvalBy+'</div>' : ''}
-    ${fileUrl ? '<div class="job-field"><a href="'+fileUrl+'" target="_blank" style="color:var(--primary);font-size:11px;">&#128206; View File</a></div>' : ''}
+    ${fileUrl ? '<div class="job-field job-file-row"><button class="btn-view-file" onclick="openJobFile(\''+jid+'\')"><span class="jab-icon">📁</span><span class="jab-label">View File</span></button></div>' : ''}
     <div class="job-notes-wrap">
-      <div class="notes-label">Notes</div>
+      <div class="notes-header">
+        <span class="notes-label">📝 Notes</span>
+        <button class="btn-notes-edit" onclick="editNotes('${jid}')"><span class="jab-icon">✏️</span><span class="jab-label">Edit Notes</span></button>
+      </div>
       <div class="notes-text" onclick="editNotes('${jid}')" id="ntext-${jid}">${notes||'Click to add notes…'}</div>
       <textarea class="notes-edit-input" id="ninput-${jid}" onblur="cancelNotes('${jid}')">${notes}</textarea>
       <div class="notes-btns" id="nbtns-${jid}">
         <button class="btn-icon" onmousedown="saveNotes('${jid}')">💾 Save</button>
-        <button class="btn-icon" onmousedown="cancelNotes('${jid}')">✕</button>
+        <button class="btn-icon" onmousedown="cancelNotes('${jid}')">✕ Cancel</button>
       </div>
     </div>
     <div class="job-card-actions">
@@ -723,6 +726,14 @@ async function saveNotes(jid){
     showToast('✅ Notes saved','success');
   } catch(e){ showToast('Notes saved locally','info'); }
   renderDashboard();
+}
+
+// ========== VIEW FILE ==========
+function openJobFile(jid){
+  const job = appData.jobs.find(j => j.id === jid);
+  const url = job && (job.fileUrl || job.files || '');
+  if(url){ window.open(url, '_blank', 'noopener,noreferrer'); }
+  else { showToast('No file attached to this job','info'); }
 }
 
 // ========== FILE UPLOAD TO GOOGLE DRIVE ==========
