@@ -1561,10 +1561,15 @@ body::before {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
+  justify-content: center;
 }
 .employee-card-actions button {
   flex: 1;
   min-width: 80px;
+  padding: 8px 12px;
+  font-size: 12px;
+  text-align: center;
+  white-space: nowrap;
 }
 
 /* ========== TASKS LIST ========== */
