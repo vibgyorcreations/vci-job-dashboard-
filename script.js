@@ -492,26 +492,26 @@ function jobCardHTML(job, colStatus){
   // Action buttons based on status & permissions
   let mainBtn = '';
   if(colStatus==='waiting' && can('canMoveToPrinting'))
-    mainBtn = '<button class="job-act-btn btn-move-next" onclick="approveJob(\''+jid+'\')">✅ Approve</button>';
+    mainBtn = '<button class="job-act-btn btn-move-next" onclick="approveJob(\''+jid+'\')"><span class="jab-icon">✅</span><span class="jab-label">Approve</span></button>';
   else if(colStatus==='printing' && can('canMoveToAssembly'))
-    mainBtn = '<button class="job-act-btn btn-move-next" onclick="moveJob(\''+jid+'\',\'assembly\')">🔧 Assembly</button>';
+    mainBtn = '<button class="job-act-btn btn-move-next" onclick="moveJob(\''+jid+'\',\'assembly\')"><span class="jab-icon">🔧</span><span class="jab-label">Assembly</span></button>';
   else if(colStatus==='assembly' && can('canMoveToDispatch'))
-    mainBtn = '<button class="job-act-btn btn-move-next" onclick="moveJob(\''+jid+'\',\'dispatch\')">📦 Dispatch</button>';
+    mainBtn = '<button class="job-act-btn btn-move-next" onclick="moveJob(\''+jid+'\',\'dispatch\')"><span class="jab-icon">📦</span><span class="jab-label">Dispatch</span></button>';
   else if(colStatus==='dispatch' && can('canArchive'))
-    mainBtn = '<button class="job-act-btn btn-archive" onclick="openDispatchModal(\''+jid+'\')">📦 Archive</button>';
+    mainBtn = '<button class="job-act-btn btn-archive" onclick="openDispatchModal(\''+jid+'\')"><span class="jab-icon">📦</span><span class="jab-label">Archive</span></button>';
 
   // Machine assignment — only in printing column
   const assignMachineBtn = (colStatus==='printing' && can('canAssignMachine'))
-    ? '<button class="job-act-btn btn-assign-machine" onclick="openMachineAssignModal(\''+jid+'\')">🔩 Machine</button>'
+    ? '<button class="job-act-btn btn-assign-machine" onclick="openMachineAssignModal(\''+jid+'\')"><span class="jab-icon">🔩</span><span class="jab-label">Machine</span></button>'
     : '';
 
-  const editBtn = can('canEditJob')      ? '<button class="job-act-btn btn-edit-card" onclick="editJob(\''+jid+'\')">✏️</button>' : '';
-  const dupBtn  = can('canDuplicateJob') ? '<button class="job-act-btn btn-dup" onclick="duplicateJob(\''+jid+'\')">⎘</button>' : '';
-  const splitBtn = can('canSplitJob')    ? '<button class="job-act-btn btn-split-c" onclick="openSplit(\''+jid+'\')">✂️</button>' : '';
-  const pinBtn  = '<button class="job-act-btn btn-pin-c" onclick="togglePin(\''+jid+'\')" title="Pin/Unpin">📌</button>';
-  const rwBtn   = '<button class="job-act-btn btn-rework-c" onclick="toggleRework(\''+jid+'\')" title="Toggle Rework">🔄</button>';
-  const tlBtn   = '<button class="job-act-btn btn-timeline" onclick="openTimeline(\''+jid+'\')">📜</button>';
-  const delBtn  = can('canDeleteJob') ? '<button class="job-act-btn btn-del" onclick="deleteJob(\''+jid+'\')">🗑️</button>' : '';
+  const editBtn  = can('canEditJob')      ? '<button class="job-act-btn btn-edit-card" onclick="editJob(\''+jid+'\')" title="Edit"><span class="jab-icon">✏️</span><span class="jab-label">Edit</span></button>' : '';
+  const dupBtn   = can('canDuplicateJob') ? '<button class="job-act-btn btn-dup" onclick="duplicateJob(\''+jid+'\')" title="Duplicate"><span class="jab-icon">⎘</span><span class="jab-label">Copy</span></button>' : '';
+  const splitBtn = can('canSplitJob')     ? '<button class="job-act-btn btn-split-c" onclick="openSplit(\''+jid+'\')" title="Split"><span class="jab-icon">✂️</span><span class="jab-label">Split</span></button>' : '';
+  const pinBtn   = '<button class="job-act-btn btn-pin-c" onclick="togglePin(\''+jid+'\')" title="Pin/Unpin"><span class="jab-icon">📌</span><span class="jab-label">Pin</span></button>';
+  const rwBtn    = '<button class="job-act-btn btn-rework-c" onclick="toggleRework(\''+jid+'\')" title="Toggle Rework"><span class="jab-icon">🔄</span><span class="jab-label">Rework</span></button>';
+  const tlBtn    = '<button class="job-act-btn btn-timeline" onclick="openTimeline(\''+jid+'\')" title="Timeline"><span class="jab-icon">📜</span><span class="jab-label">Log</span></button>';
+  const delBtn   = can('canDeleteJob') ? '<button class="job-act-btn btn-del" onclick="deleteJob(\''+jid+'\')" title="Delete"><span class="jab-icon">🗑️</span><span class="jab-label">Delete</span></button>' : '';
 
   return `<div class="${cardClass}" id="card-${id}">
     <div class="job-card-top">
@@ -533,7 +533,10 @@ function jobCardHTML(job, colStatus){
         <button class="btn-icon" onmousedown="cancelNotes('${jid}')">✕</button>
       </div>
     </div>
-    <div class="job-card-actions">${mainBtn}${assignMachineBtn}${editBtn}${dupBtn}${splitBtn}${pinBtn}${rwBtn}${tlBtn}${delBtn}</div>
+    <div class="job-card-actions">
+      <div class="jca-primary">${mainBtn}${assignMachineBtn}</div>
+      <div class="jca-utils">${editBtn}${dupBtn}${splitBtn}${pinBtn}${rwBtn}${tlBtn}${delBtn}</div>
+    </div>
   </div>`;
 }
 
