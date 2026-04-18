@@ -1,5 +1,5 @@
 // FactoryFlow OS Service Worker
-const CACHE_NAME = 'factoryflow-v1';
+const CACHE_NAME = 'factoryflow-v2';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
