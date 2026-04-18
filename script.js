@@ -137,7 +137,13 @@ document.addEventListener('DOMContentLoaded', () => {
       const s = JSON.parse(sess);
       currentRole = s.role;
       if(s.employeeId) currentEmployee = appData.employees.find(e => e.id === s.employeeId) || null;
-      showApp();
+      
+      // If employee role, show employee dashboard instead of main app
+      if(currentRole === 'employee' && currentEmployee){
+        showEmployeeFullDashboard();
+      } else {
+        showApp();
+      }
     } catch(e){ showLogin(); }
   } else {
     showLogin();
@@ -1865,9 +1871,176 @@ function loginAsEmployee(emp){
     employeeId: emp.id,
     ts: Date.now()
   }));
-  showApp();
-  // Show employee task dashboard
-  setTimeout(() => openEmployeeTaskDashboard(), 500);
+  // Show full-screen employee dashboard instead of the main app
+  showEmployeeFullDashboard();
+}
+
+function showEmployeeFullDashboard(){
+  if(!currentEmployee) return;
+  
+  // Hide main app and login page
+  document.getElementById('loginPage').classList.add('hidden');
+  document.getElementById('appContainer').classList.add('hidden');
+  
+  // Show employee full dashboard
+  const empDash = document.getElementById('employeeFullDashboard');
+  empDash.classList.remove('hidden');
+  
+  // Update header info
+  const emp = currentEmployee;
+  document.getElementById('empFullAvatar').textContent = getInitials(emp.name);
+  document.getElementById('empFullName').textContent = emp.name;
+  document.getElementById('empFullDept').textContent = getDepartmentName(emp.department);
+  document.getElementById('empFullCompanyName').textContent = appData.settings.companyName || 'VIBGYOR CREATIONS INDIA';
+  
+  // Time-based greeting
+  const hour = new Date().getHours();
+  let greeting = 'Good morning';
+  if(hour >= 12 && hour < 17) greeting = 'Good afternoon';
+  else if(hour >= 17) greeting = 'Good evening';
+  document.getElementById('empFullGreeting').textContent = `${greeting}, ${emp.name}! 👋`;
+  
+  // Render tasks
+  renderEmployeeFullTasks('current');
+  
+  // Update notification badge
+  updateEmployeeNotificationBadge();
+}
+
+function logoutEmployee(){
+  currentRole = null;
+  currentEmployee = null;
+  sessionStorage.removeItem('ffos_session');
+  
+  // Hide employee dashboard, show login
+  document.getElementById('employeeFullDashboard').classList.add('hidden');
+  document.getElementById('appContainer').classList.add('hidden');
+  document.getElementById('loginPage').classList.remove('hidden');
+  
+  // Reset login UI
+  hideEmployeeLogin();
+  showToast('👋 Logged out successfully', 'info');
+}
+
+let currentEmpTab = 'current';
+
+function switchEmployeeTab(tab){
+  currentEmpTab = tab;
+  // Update tab UI
+  document.querySelectorAll('.emp-tab').forEach(t => t.classList.remove('active'));
+  document.querySelector(`.emp-tab[data-tab="${tab}"]`)?.classList.add('active');
+  renderEmployeeFullTasks(tab);
+}
+
+function renderEmployeeFullTasks(filter = 'current'){
+  if(!currentEmployee) return;
+  
+  const emp = currentEmployee;
+  let empTasks = appData.tasks.filter(t => t.assignedTo === emp.id);
+  
+  // Calculate stats
+  const pending = empTasks.filter(t => t.status === 'pending').length;
+  const inProgress = empTasks.filter(t => t.status === 'in-progress').length;
+  const completed = empTasks.filter(t => t.status === 'completed').length;
+  const total = empTasks.length;
+  
+  // Update stats display
+  document.getElementById('empFullPending').textContent = pending;
+  document.getElementById('empFullInProgress').textContent = inProgress;
+  document.getElementById('empFullCompleted').textContent = completed;
+  document.getElementById('empFullTotal').textContent = total;
+  
+  // Filter tasks based on tab
+  if(filter === 'current'){
+    empTasks = empTasks.filter(t => t.status !== 'completed');
+  } else if(filter === 'completed'){
+    empTasks = empTasks.filter(t => t.status === 'completed');
+  }
+  // 'all' shows everything
+  
+  // Sort: in-progress first, then pending, then completed
+  const statusOrder = { 'in-progress': 0, 'pending': 1, 'completed': 2 };
+  empTasks.sort((a, b) => (statusOrder[a.status] || 0) - (statusOrder[b.status] || 0));
+  
+  const container = document.getElementById('empFullTasksContainer');
+  
+  if(empTasks.length === 0){
+    const emptyMsg = filter === 'current' 
+      ? 'No current tasks! You\'re all caught up. 🎉'
+      : filter === 'completed'
+      ? 'No completed tasks yet. Start working on your tasks!'
+      : 'No tasks assigned yet. Check back later!';
+    container.innerHTML = `<div class="emp-tasks-empty">${emptyMsg}</div>`;
+    return;
+  }
+  
+  container.innerHTML = empTasks.map(task => {
+    const job = task.relatedJob ? appData.jobs.find(j => j.id === task.relatedJob) : null;
+    const isCompleted = task.status === 'completed';
+    const isInProgress = task.status === 'in-progress';
+    const isPending = task.status === 'pending';
+    
+    const priorityColors = { low: '#00ff88', medium: '#ffd000', high: '#ff1744' };
+    const priorityIcons = { low: '🟢', medium: '🟡', high: '🔴' };
+    
+    // Format dates
+    const dueDate = task.dueDate ? new Date(task.dueDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) : '';
+    const isOverdue = task.dueDate && !isCompleted && new Date(task.dueDate) < new Date();
+    
+    return `
+    <div class="emp-full-task-card ${task.status} ${isOverdue ? 'overdue' : ''}">
+      <div class="emp-task-card-header">
+        <div class="emp-task-card-status">
+          ${isPending ? '📋' : isInProgress ? '⏳' : '✅'} 
+          <span class="status-text">${task.status.replace('-', ' ').toUpperCase()}</span>
+        </div>
+        <div class="emp-task-card-priority" style="color: ${priorityColors[task.priority] || '#ffd000'}">
+          ${priorityIcons[task.priority] || '🟡'} ${task.priority.toUpperCase()}
+        </div>
+      </div>
+      
+      <div class="emp-task-card-title">${escHtml(task.title)}</div>
+      
+      ${task.description ? `<div class="emp-task-card-desc">${escHtml(task.description)}</div>` : ''}
+      
+      <div class="emp-task-card-meta">
+        ${dueDate ? `<span class="emp-task-meta-item ${isOverdue ? 'overdue' : ''}">📅 Due: ${dueDate}</span>` : ''}
+        ${job ? `<span class="emp-task-meta-item">📋 Job: ${escHtml(job.client || '')} - ${escHtml(job.name || job.id)}</span>` : ''}
+        ${task.createdAt ? `<span class="emp-task-meta-item">📆 Created: ${new Date(task.createdAt).toLocaleDateString('en-GB')}</span>` : ''}
+      </div>
+      
+      ${task.completionNotes ? `
+        <div class="emp-task-completion-info">
+          <div class="completion-label">📝 Completion Notes:</div>
+          <div class="completion-text">${escHtml(task.completionNotes)}</div>
+          ${task.completionRating ? `<div class="completion-rating">⭐ Self-rated: ${task.completionRating}/5</div>` : ''}
+          ${task.completionFeedback ? `<div class="completion-feedback">💡 Feedback: ${escHtml(task.completionFeedback)}</div>` : ''}
+        </div>
+      ` : ''}
+      
+      <div class="emp-task-card-actions">
+        ${isPending ? `
+          <button class="emp-action-btn start" onclick="startEmployeeTaskFull('${task.id}')">
+            ▶️ Start Task
+          </button>
+        ` : ''}
+        ${isInProgress ? `
+          <button class="emp-action-btn complete" onclick="openTaskCompleteModal('${task.id}')">
+            ✅ Complete
+          </button>
+          <button class="emp-action-btn notes" onclick="addTaskNote('${task.id}')">
+            📝 Add Note
+          </button>
+        ` : ''}
+        ${isCompleted ? `
+          <div class="emp-task-done-badge">
+            ✓ Completed ${task.completedAt ? new Date(task.completedAt).toLocaleDateString('en-GB') : ''}
+          </div>
+        ` : ''}
+      </div>
+    </div>
+  `;
+  }).join('');
 }
 
 function getInitials(name){
@@ -1893,8 +2066,7 @@ function renderEmployees(){
   
   const filtered = appData.employees.filter(e =>
     e.name.toLowerCase().includes(search) ||
-    (e.department || '').toLowerCase().includes(search) ||
-    (e.email || '').toLowerCase().includes(search)
+    (e.department || '').toLowerCase().includes(search)
   );
   
   if(filtered.length === 0){
@@ -1906,6 +2078,7 @@ function renderEmployees(){
   grid.innerHTML = filtered.map(emp => {
     const pendingTasks = appData.tasks.filter(t => t.assignedTo === emp.id && t.status !== 'completed').length;
     const completedTasks = appData.tasks.filter(t => t.assignedTo === emp.id && t.status === 'completed').length;
+    const unreadNotifs = (emp.notifications || []).filter(n => !n.read).length;
     
     return `
     <div class="employee-card ${emp.status === 'inactive' ? 'inactive' : ''}">
@@ -1918,14 +2091,14 @@ function renderEmployees(){
             <span class="employee-status-badge ${emp.status}">${emp.status}</span>
           </div>
         </div>
+        ${unreadNotifs > 0 ? `<span class="emp-notif-indicator">🔔 ${unreadNotifs}</span>` : ''}
       </div>
       <div class="employee-card-body">
-        ${emp.email ? `<div class="employee-contact">📧 ${escHtml(emp.email)}</div>` : ''}
-        ${emp.phone ? `<div class="employee-contact">📱 ${escHtml(emp.phone)}</div>` : ''}
         <div class="employee-task-summary">
           <span class="emp-task-badge pending">📋 ${pendingTasks} pending</span>
           <span class="emp-task-badge completed">✔️ ${completedTasks} done</span>
         </div>
+        <div class="employee-pin-info">🔐 PIN: ${emp.pin ? '****' : 'Not set'}</div>
       </div>
       <div class="employee-card-actions">
         <button class="btn-secondary" onclick="openTaskModal('${emp.id}')">📋 Assign Task</button>
@@ -1965,8 +2138,6 @@ function openEmployeeModal(emp){
   document.getElementById('employeeModalTitle').textContent = emp ? '✏️ Edit Employee' : '➕ Add Employee';
   document.getElementById('employeeName').value = emp ? emp.name : '';
   document.getElementById('employeeDepartment').value = emp ? (emp.department || 'waiting') : 'waiting';
-  document.getElementById('employeeEmail').value = emp ? (emp.email || '') : '';
-  document.getElementById('employeePhone').value = emp ? (emp.phone || '') : '';
   document.getElementById('employeeStatus').value = emp ? (emp.status || 'active') : 'active';
   document.getElementById('employeePin').value = emp ? (emp.pin || '') : '';
   openModal('employeeModal');
@@ -2003,10 +2174,10 @@ function saveEmployee(){
   
   emp.name = name;
   emp.department = document.getElementById('employeeDepartment').value;
-  emp.email = document.getElementById('employeeEmail').value.trim();
-  emp.phone = document.getElementById('employeePhone').value.trim();
   emp.status = document.getElementById('employeeStatus').value;
   emp.pin = pin;
+  // Initialize notification array for new employees
+  if(!emp.notifications) emp.notifications = [];
   
   saveLocal();
   closeModal('employeeModal');
@@ -2155,12 +2326,31 @@ function saveTask(){
     appData.tasks.push(task);
   }
   
+  const previousAssignee = task.assignedTo;
+  
   task.title = title;
   task.description = document.getElementById('taskDescription').value.trim();
   task.assignedTo = assignedTo;
   task.priority = document.getElementById('taskPriority').value;
   task.dueDate = document.getElementById('taskDueDate').value;
   task.relatedJob = document.getElementById('taskRelatedJob').value || null;
+  
+  // Send notification to assigned employee
+  if(!isEdit || previousAssignee !== assignedTo){
+    addEmployeeNotification(assignedTo, {
+      type: 'task_assigned',
+      message: `New task assigned: ${title}`,
+      taskId: task.id,
+      timestamp: new Date().toISOString()
+    });
+  } else {
+    addEmployeeNotification(assignedTo, {
+      type: 'task_updated',
+      message: `Task updated: ${title}`,
+      taskId: task.id,
+      timestamp: new Date().toISOString()
+    });
+  }
   
   saveLocal();
   closeModal('taskModal');
@@ -2271,3 +2461,284 @@ function completeEmployeeTask(taskId){
   showToast('✅ Task completed!', 'success');
   openEmployeeTaskDashboard();
 }
+
+// ========== ENHANCED EMPLOYEE TASK FUNCTIONS ==========
+
+function startEmployeeTaskFull(taskId){
+  const task = appData.tasks.find(t => t.id === taskId);
+  if(!task) return;
+  task.status = 'in-progress';
+  task.startedAt = new Date().toISOString();
+  saveLocal();
+  showToast('▶️ Task started! Good luck!', 'info');
+  renderEmployeeFullTasks(currentEmpTab);
+  
+  // Add notification to task creator/admin
+  addDepartmentNotification(currentEmployee.department, {
+    type: 'task_started',
+    message: `${currentEmployee.name} started task: ${task.title}`,
+    taskId: task.id,
+    timestamp: new Date().toISOString()
+  });
+}
+
+let taskCompleteRating = 0;
+
+function openTaskCompleteModal(taskId){
+  const task = appData.tasks.find(t => t.id === taskId);
+  if(!task) return;
+  
+  document.getElementById('taskCompleteId').value = taskId;
+  document.getElementById('taskCompleteSummary').innerHTML = `
+    <div class="task-summary-card">
+      <strong>${escHtml(task.title)}</strong>
+      ${task.description ? `<p>${escHtml(task.description)}</p>` : ''}
+      <div class="task-summary-meta">
+        ${task.dueDate ? `<span>📅 Due: ${new Date(task.dueDate).toLocaleDateString('en-GB')}</span>` : ''}
+        ${task.startedAt ? `<span>▶️ Started: ${new Date(task.startedAt).toLocaleDateString('en-GB')}</span>` : ''}
+      </div>
+    </div>
+  `;
+  document.getElementById('taskCompleteNotes').value = '';
+  document.getElementById('taskCompleteFeedback').value = '';
+  taskCompleteRating = 0;
+  document.querySelectorAll('.rating-btn').forEach(btn => btn.classList.remove('active'));
+  
+  openModal('taskCompleteModal');
+}
+
+function setTaskRating(rating){
+  taskCompleteRating = rating;
+  document.querySelectorAll('.rating-btn').forEach(btn => {
+    const r = parseInt(btn.dataset.rating);
+    btn.classList.toggle('active', r <= rating);
+  });
+}
+
+function submitTaskCompletion(){
+  const taskId = document.getElementById('taskCompleteId').value;
+  const task = appData.tasks.find(t => t.id === taskId);
+  if(!task) return;
+  
+  const notes = document.getElementById('taskCompleteNotes').value.trim();
+  const feedback = document.getElementById('taskCompleteFeedback').value.trim();
+  
+  task.status = 'completed';
+  task.completedAt = new Date().toISOString();
+  task.completionNotes = notes;
+  task.completionFeedback = feedback;
+  task.completionRating = taskCompleteRating || null;
+  
+  saveLocal();
+  closeModal('taskCompleteModal');
+  showToast('✅ Task completed successfully!', 'success');
+  renderEmployeeFullTasks(currentEmpTab);
+  
+  // Add notification to department
+  addDepartmentNotification(currentEmployee.department, {
+    type: 'task_completed',
+    message: `${currentEmployee.name} completed task: ${task.title}`,
+    taskId: task.id,
+    notes: notes,
+    timestamp: new Date().toISOString()
+  });
+}
+
+function addTaskNote(taskId){
+  const task = appData.tasks.find(t => t.id === taskId);
+  if(!task) return;
+  
+  const note = prompt('Add a note to this task:');
+  if(!note || !note.trim()) return;
+  
+  if(!task.workNotes) task.workNotes = [];
+  task.workNotes.push({
+    text: note.trim(),
+    timestamp: new Date().toISOString(),
+    author: currentEmployee ? currentEmployee.name : 'Unknown'
+  });
+  
+  saveLocal();
+  showToast('📝 Note added!', 'success');
+  renderEmployeeFullTasks(currentEmpTab);
+}
+
+// ========== EMPLOYEE NOTIFICATIONS ==========
+
+function updateEmployeeNotificationBadge(){
+  if(!currentEmployee) return;
+  
+  const emp = appData.employees.find(e => e.id === currentEmployee.id);
+  if(!emp) return;
+  
+  const unread = (emp.notifications || []).filter(n => !n.read).length;
+  const badge = document.getElementById('empNotifBadge');
+  if(badge){
+    badge.textContent = unread;
+    badge.style.display = unread > 0 ? 'inline-flex' : 'none';
+  }
+}
+
+function toggleEmployeeNotifications(){
+  const panel = document.getElementById('empNotificationsPanel');
+  panel.classList.toggle('hidden');
+  
+  if(!panel.classList.contains('hidden')){
+    renderEmployeeNotifications();
+  }
+}
+
+function renderEmployeeNotifications(){
+  if(!currentEmployee) return;
+  
+  const emp = appData.employees.find(e => e.id === currentEmployee.id);
+  if(!emp) return;
+  
+  const notifications = emp.notifications || [];
+  const list = document.getElementById('empNotifList');
+  
+  if(notifications.length === 0){
+    list.innerHTML = '<div class="emp-notif-empty">No notifications yet</div>';
+    return;
+  }
+  
+  // Sort by timestamp descending
+  notifications.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+  
+  list.innerHTML = notifications.map(notif => {
+    const time = new Date(notif.timestamp).toLocaleString('en-GB', { 
+      day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' 
+    });
+    const typeIcons = {
+      'task_assigned': '📋',
+      'task_updated': '🔄',
+      'task_reminder': '⏰',
+      'general': '📢'
+    };
+    
+    return `
+      <div class="emp-notif-item ${notif.read ? 'read' : 'unread'}" onclick="markNotificationRead('${notif.id}')">
+        <div class="emp-notif-icon">${typeIcons[notif.type] || '📢'}</div>
+        <div class="emp-notif-content">
+          <div class="emp-notif-message">${escHtml(notif.message)}</div>
+          <div class="emp-notif-time">${time}</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function markNotificationRead(notifId){
+  if(!currentEmployee) return;
+  
+  const emp = appData.employees.find(e => e.id === currentEmployee.id);
+  if(!emp) return;
+  
+  const notif = (emp.notifications || []).find(n => n.id === notifId);
+  if(notif){
+    notif.read = true;
+    saveLocal();
+    updateEmployeeNotificationBadge();
+    renderEmployeeNotifications();
+  }
+}
+
+function clearEmployeeNotifications(){
+  if(!currentEmployee) return;
+  
+  const emp = appData.employees.find(e => e.id === currentEmployee.id);
+  if(!emp) return;
+  
+  emp.notifications = [];
+  saveLocal();
+  updateEmployeeNotificationBadge();
+  renderEmployeeNotifications();
+  showToast('🧹 Notifications cleared', 'info');
+}
+
+// Add notification to specific employee
+function addEmployeeNotification(empId, notification){
+  const emp = appData.employees.find(e => e.id === empId);
+  if(!emp) return;
+  
+  if(!emp.notifications) emp.notifications = [];
+  emp.notifications.push({
+    ...notification,
+    id: 'NOTIF-' + Date.now() + '-' + Math.random().toString(36).slice(2, 9),
+    read: false
+  });
+  
+  saveLocal();
+}
+
+// Add notification to all employees in a department
+function addDepartmentNotification(department, notification){
+  appData.employees
+    .filter(e => e.department === department && e.status === 'active')
+    .forEach(emp => {
+      // Don't notify the person who triggered the action
+      if(currentEmployee && emp.id === currentEmployee.id) return;
+      
+      addEmployeeNotification(emp.id, notification);
+    });
+}
+
+// ========== DEPARTMENT NOTIFICATIONS VIEW ==========
+let currentDeptNotifTab = 'all';
+
+function switchDeptNotifTab(dept){
+  currentDeptNotifTab = dept;
+  document.querySelectorAll('.dept-tab').forEach(t => t.classList.remove('active'));
+  document.querySelector(`.dept-tab[data-dept="${dept}"]`)?.classList.add('active');
+  renderDepartmentNotifications();
+}
+
+function renderDepartmentNotifications(){
+  const list = document.getElementById('deptNotifList');
+  if(!list) return;
+  
+  // Collect all notifications from all employees
+  let allNotifs = [];
+  appData.employees.forEach(emp => {
+    (emp.notifications || []).forEach(notif => {
+      allNotifs.push({
+        ...notif,
+        employeeName: emp.name,
+        employeeDept: emp.department
+      });
+    });
+  });
+  
+  // Filter by department
+  if(currentDeptNotifTab !== 'all'){
+    allNotifs = allNotifs.filter(n => n.employeeDept === currentDeptNotifTab);
+  }
+  
+  // Sort by timestamp descending
+  allNotifs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+  
+  if(allNotifs.length === 0){
+    list.innerHTML = '<div class="emp-notif-empty">No notifications in this department</div>';
+    return;
+  }
+  
+  list.innerHTML = allNotifs.slice(0, 50).map(notif => {
+    const time = new Date(notif.timestamp).toLocaleString('en-GB', { 
+      day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' 
+    });
+    
+    return `
+      <div class="dept-notif-item">
+        <div class="dept-notif-header">
+          <span class="dept-notif-employee">${escHtml(notif.employeeName)}</span>
+          <span class="dept-notif-dept">${getDepartmentName(notif.employeeDept)}</span>
+        </div>
+        <div class="dept-notif-message">${escHtml(notif.message)}</div>
+        <div class="dept-notif-time">${time}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+// Modify saveTask to send notification to assigned employee
+const originalSaveTask = typeof saveTask === 'function' ? saveTask : null;

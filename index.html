@@ -315,6 +315,7 @@
       <div class="view-header">
         <h2 class="view-title">👥 Employees &amp; Task Assignment</h2>
         <div class="view-actions">
+          <button class="btn-secondary" onclick="openModal('deptNotificationsModal'); renderDepartmentNotifications();">🔔 Notifications</button>
           <button class="btn-primary" id="addEmployeeBtn" onclick="openEmployeeModal()">&#10010; Add Employee</button>
         </div>
       </div>
@@ -720,7 +721,7 @@
     <div class="modal-body">
       <input type="hidden" id="employeeEditId">
       <div class="form-grid">
-        <div class="form-group">
+        <div class="form-group form-full">
           <label class="form-label">Employee Name *</label>
           <input type="text" class="form-input" id="employeeName" placeholder="e.g. John Smith">
         </div>
@@ -735,23 +736,16 @@
           </select>
         </div>
         <div class="form-group">
-          <label class="form-label">Email</label>
-          <input type="email" class="form-input" id="employeeEmail" placeholder="john@company.com">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Phone</label>
-          <input type="tel" class="form-input" id="employeePhone" placeholder="+1 234 567 890">
-        </div>
-        <div class="form-group">
           <label class="form-label">Status</label>
           <select class="form-input" id="employeeStatus">
             <option value="active">Active</option>
             <option value="inactive">Inactive</option>
           </select>
         </div>
-        <div class="form-group">
-          <label class="form-label">Employee PIN (4 digits)</label>
+        <div class="form-group form-full">
+          <label class="form-label">Employee PIN (4 digits) *</label>
           <input type="text" class="form-input" id="employeePin" maxlength="4" placeholder="0000" pattern="[0-9]{4}">
+          <small class="form-hint">This PIN is used for employee login</small>
         </div>
       </div>
       <div class="modal-footer">
@@ -814,24 +808,130 @@
   </div>
 </div>
 
-<!-- Employee Task Dashboard (for logged-in employees) -->
-<div class="modal" id="employeeTaskDashModal">
-  <div class="modal-content glass modal-lg">
+<!-- Employee Task Dashboard (Full-screen for logged-in employees) -->
+<div id="employeeFullDashboard" class="employee-full-dashboard hidden">
+  <div class="emp-full-header">
+    <div class="emp-full-branding">
+      <span class="emp-full-logo">🏭</span>
+      <span class="emp-full-company" id="empFullCompanyName">VIBGYOR CREATIONS INDIA</span>
+    </div>
+    <div class="emp-full-user">
+      <div class="emp-full-avatar" id="empFullAvatar">JS</div>
+      <div class="emp-full-user-info">
+        <div class="emp-full-user-name" id="empFullName">Employee</div>
+        <div class="emp-full-user-dept" id="empFullDept">Department</div>
+      </div>
+      <button class="emp-notification-btn" onclick="toggleEmployeeNotifications()" id="empNotificationBtn">
+        🔔 <span class="emp-notif-badge" id="empNotifBadge">0</span>
+      </button>
+      <button class="btn-secondary emp-logout-btn" onclick="logoutEmployee()">🚪 Logout</button>
+    </div>
+  </div>
+  
+  <!-- Employee Notifications Panel -->
+  <div id="empNotificationsPanel" class="emp-notifications-panel hidden">
+    <div class="emp-notif-header">
+      <h3>🔔 Notifications</h3>
+      <button class="emp-notif-clear" onclick="clearEmployeeNotifications()">Clear All</button>
+    </div>
+    <div class="emp-notif-list" id="empNotifList">
+      <!-- Notifications will be populated here -->
+    </div>
+  </div>
+  
+  <div class="emp-full-content">
+    <div class="emp-full-greeting" id="empFullGreeting">Good morning!</div>
+    
+    <div class="emp-full-stats">
+      <div class="emp-stat-card pending">
+        <div class="emp-stat-icon">📋</div>
+        <div class="emp-stat-value" id="empFullPending">0</div>
+        <div class="emp-stat-label">Pending</div>
+      </div>
+      <div class="emp-stat-card in-progress">
+        <div class="emp-stat-icon">⏳</div>
+        <div class="emp-stat-value" id="empFullInProgress">0</div>
+        <div class="emp-stat-label">In Progress</div>
+      </div>
+      <div class="emp-stat-card completed">
+        <div class="emp-stat-icon">✅</div>
+        <div class="emp-stat-value" id="empFullCompleted">0</div>
+        <div class="emp-stat-label">Completed</div>
+      </div>
+      <div class="emp-stat-card total">
+        <div class="emp-stat-icon">📊</div>
+        <div class="emp-stat-value" id="empFullTotal">0</div>
+        <div class="emp-stat-label">Total Tasks</div>
+      </div>
+    </div>
+    
+    <div class="emp-full-tabs">
+      <button class="emp-tab active" data-tab="current" onclick="switchEmployeeTab('current')">📋 Current Tasks</button>
+      <button class="emp-tab" data-tab="completed" onclick="switchEmployeeTab('completed')">✅ Completed</button>
+      <button class="emp-tab" data-tab="all" onclick="switchEmployeeTab('all')">📊 All Tasks</button>
+    </div>
+    
+    <div class="emp-full-tasks" id="empFullTasksContainer">
+      <!-- Employee's tasks will be shown here -->
+    </div>
+  </div>
+</div>
+
+<!-- Task Completion Modal (for feedback/notes) -->
+<div class="modal" id="taskCompleteModal">
+  <div class="modal-content glass">
     <div class="modal-header">
-      <h3 class="modal-title" id="empTaskDashTitle">📋 My Tasks</h3>
-      <button class="modal-close" onclick="closeModal('employeeTaskDashModal')">&#10005;</button>
+      <h3 class="modal-title">✅ Complete Task</h3>
+      <button class="modal-close" onclick="closeModal('taskCompleteModal')">&#10005;</button>
     </div>
     <div class="modal-body">
-      <div class="emp-dash-header">
-        <div class="emp-dash-greeting" id="empDashGreeting">Welcome!</div>
-        <div class="emp-dash-stats">
-          <span class="emp-dash-stat"><strong id="empDashPending">0</strong> Pending</span>
-          <span class="emp-dash-stat"><strong id="empDashInProgress">0</strong> In Progress</span>
-          <span class="emp-dash-stat"><strong id="empDashCompleted">0</strong> Completed</span>
+      <input type="hidden" id="taskCompleteId">
+      <div class="task-complete-summary" id="taskCompleteSummary">
+        <!-- Task summary will be shown here -->
+      </div>
+      <div class="form-group">
+        <label class="form-label">📝 Work Notes / Comments</label>
+        <textarea class="form-input" id="taskCompleteNotes" rows="3" placeholder="Describe what was done, any issues encountered, etc."></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">⭐ Self Rating (Optional)</label>
+        <div class="task-rating-selector" id="taskRating">
+          <button type="button" class="rating-btn" data-rating="1" onclick="setTaskRating(1)">⭐</button>
+          <button type="button" class="rating-btn" data-rating="2" onclick="setTaskRating(2)">⭐</button>
+          <button type="button" class="rating-btn" data-rating="3" onclick="setTaskRating(3)">⭐</button>
+          <button type="button" class="rating-btn" data-rating="4" onclick="setTaskRating(4)">⭐</button>
+          <button type="button" class="rating-btn" data-rating="5" onclick="setTaskRating(5)">⭐</button>
         </div>
       </div>
-      <div class="emp-tasks-container" id="empTasksContainer">
-        <!-- Employee's tasks will be shown here -->
+      <div class="form-group">
+        <label class="form-label">💡 Feedback / Suggestions</label>
+        <textarea class="form-input" id="taskCompleteFeedback" rows="2" placeholder="Any suggestions for improvement or feedback about the task..."></textarea>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick="closeModal('taskCompleteModal')">Cancel</button>
+        <button class="btn-primary" onclick="submitTaskCompletion()">✅ Mark Complete</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Department Notifications Modal -->
+<div class="modal" id="deptNotificationsModal">
+  <div class="modal-content glass modal-lg">
+    <div class="modal-header">
+      <h3 class="modal-title">🔔 Department Notifications</h3>
+      <button class="modal-close" onclick="closeModal('deptNotificationsModal')">&#10005;</button>
+    </div>
+    <div class="modal-body">
+      <div class="dept-notif-tabs">
+        <button class="dept-tab active" data-dept="all" onclick="switchDeptNotifTab('all')">All</button>
+        <button class="dept-tab" data-dept="waiting" onclick="switchDeptNotifTab('waiting')">Waiting</button>
+        <button class="dept-tab" data-dept="printing" onclick="switchDeptNotifTab('printing')">Printing</button>
+        <button class="dept-tab" data-dept="assembly" onclick="switchDeptNotifTab('assembly')">Assembly</button>
+        <button class="dept-tab" data-dept="dispatch" onclick="switchDeptNotifTab('dispatch')">Dispatch</button>
+      </div>
+      <div class="dept-notif-list" id="deptNotifList">
+        <!-- Department notifications will be shown here -->
       </div>
     </div>
   </div>
