@@ -1880,7 +1880,7 @@ function showEmployeeFullDashboard(){
   
   // Hide main app and login page
   document.getElementById('loginPage').classList.add('hidden');
-  document.getElementById('appPage').classList.add('hidden');
+  document.getElementById('appContainer').classList.add('hidden');
   
   // Show employee full dashboard
   const empDash = document.getElementById('employeeFullDashboard');
@@ -1914,7 +1914,7 @@ function logoutEmployee(){
   
   // Hide employee dashboard, show login
   document.getElementById('employeeFullDashboard').classList.add('hidden');
-  document.getElementById('appPage').classList.add('hidden');
+  document.getElementById('appContainer').classList.add('hidden');
   document.getElementById('loginPage').classList.remove('hidden');
   
   // Reset login UI
