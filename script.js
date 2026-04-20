@@ -2390,7 +2390,7 @@ function editTask(taskId){
   openModal('taskModal');
 }
 
-function saveTask(){
+async function saveTask(){
   const editId = document.getElementById('taskEditId').value;
   const title = document.getElementById('taskTitle').value.trim();
   const assignedTo = document.getElementById('taskEmployee').value;
@@ -2443,18 +2443,24 @@ function saveTask(){
   showToast(isEdit ? '✅ Task updated' : '✅ Task assigned', 'success');
   renderTasks();
   renderEmployees();
+  
+  // Sync task to Google Sheet
+  try{ await Cloud.pushData(isEdit ? 'updateTask' : 'createTask', task); } catch(e){ console.error('Task sync failed:', e); }
 }
 
-function deleteTask(taskId){
+async function deleteTask(taskId){
   if(!confirm('Delete this task?')) return;
   appData.tasks = appData.tasks.filter(t => t.id !== taskId);
   saveLocal();
   showToast('🗑️ Task deleted', 'warning');
   renderTasks();
   renderEmployees();
+  
+  // Sync deletion to Google Sheet
+  try{ await Cloud.pushData('deleteTask', {taskId}); } catch(e){ console.error('Task delete sync failed:', e); }
 }
 
-function toggleTaskComplete(taskId){
+async function toggleTaskComplete(taskId){
   const task = appData.tasks.find(t => t.id === taskId);
   if(!task) return;
   
@@ -2470,6 +2476,9 @@ function toggleTaskComplete(taskId){
   renderTasks();
   renderEmployees();
   showToast(task.status === 'completed' ? '✅ Task completed!' : '📋 Task reopened', 'success');
+  
+  // Sync task status to Google Sheet
+  try{ await Cloud.pushData('updateTask', task); } catch(e){ console.error('Task sync failed:', e); }
 }
 
 function viewTaskDetails(taskId){
@@ -2646,7 +2655,7 @@ function startEmployeeTask(taskId){
   openEmployeeTaskDashboard();
 }
 
-function completeEmployeeTask(taskId){
+async function completeEmployeeTask(taskId){
   const task = appData.tasks.find(t => t.id === taskId);
   if(!task) return;
   task.status = 'completed';
@@ -2654,11 +2663,14 @@ function completeEmployeeTask(taskId){
   saveLocal();
   showToast('✅ Task completed!', 'success');
   openEmployeeTaskDashboard();
+  
+  // Sync task to Google Sheet
+  try{ await Cloud.pushData('updateTask', task); } catch(e){ console.error('Task sync failed:', e); }
 }
 
 // ========== ENHANCED EMPLOYEE TASK FUNCTIONS ==========
 
-function startEmployeeTaskFull(taskId){
+async function startEmployeeTaskFull(taskId){
   const task = appData.tasks.find(t => t.id === taskId);
   if(!task) return;
   task.status = 'in-progress';
@@ -2674,6 +2686,9 @@ function startEmployeeTaskFull(taskId){
     taskId: task.id,
     timestamp: new Date().toISOString()
   });
+  
+  // Sync task to Google Sheet
+  try{ await Cloud.pushData('updateTask', task); } catch(e){ console.error('Task sync failed:', e); }
 }
 
 let taskCompleteRating = 0;
@@ -2709,7 +2724,7 @@ function setTaskRating(rating){
   });
 }
 
-function submitTaskCompletion(){
+async function submitTaskCompletion(){
   const taskId = document.getElementById('taskCompleteId').value;
   const task = appData.tasks.find(t => t.id === taskId);
   if(!task) return;
@@ -2736,6 +2751,9 @@ function submitTaskCompletion(){
     notes: notes,
     timestamp: new Date().toISOString()
   });
+  
+  // Sync task to Google Sheet
+  try{ await Cloud.pushData('updateTask', task); } catch(e){ console.error('Task sync failed:', e); }
 }
 
 function addTaskNote(taskId){
@@ -2773,7 +2791,7 @@ function addTaskNote(taskId){
   openModal('taskNoteModal');
 }
 
-function submitTaskNote(){
+async function submitTaskNote(){
   const taskId = document.getElementById('taskNoteId').value;
   const task = appData.tasks.find(t => t.id === taskId);
   if(!task) return;
@@ -2795,6 +2813,9 @@ function submitTaskNote(){
   closeModal('taskNoteModal');
   showToast('📝 Note added!', 'success');
   renderEmployeeFullTasks(currentEmpTab);
+  
+  // Sync task to Google Sheet
+  try{ await Cloud.pushData('updateTask', task); } catch(e){ console.error('Task sync failed:', e); }
 }
 
 // ========== EMPLOYEE NOTIFICATIONS ==========
