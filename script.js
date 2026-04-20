@@ -2215,7 +2215,7 @@ function editEmployee(empId){
   if(emp) openEmployeeModal(emp);
 }
 
-function saveEmployee(){
+async function saveEmployee(){
   const editId = document.getElementById('employeeEditId').value;
   const name = document.getElementById('employeeName').value.trim();
   if(!name){ showToast('❌ Employee name is required', 'error'); return; }
@@ -2248,12 +2248,15 @@ function saveEmployee(){
   
   saveLocal();
   closeModal('employeeModal');
-  showToast(isEdit ? '✅ Employee updated' : '✅ Employee added: ' + name, 'success');
   renderEmployees();
   renderTasks();
+  showToast(isEdit ? '✅ Employee updated' : '✅ Employee added: ' + name, 'success');
+  
+  // Sync to cloud
+  try{ await Cloud.pushData(isEdit ? 'updateEmployee' : 'createEmployee', emp); } catch(e){ console.error('Employee sync failed:', e); }
 }
 
-function deleteEmployee(empId){
+async function deleteEmployee(empId){
   const emp = appData.employees.find(e => e.id === empId);
   if(!emp) return;
   if(!confirm('Delete employee "' + emp.name + '"? This will also remove all their tasks.')) return;
@@ -2261,9 +2264,12 @@ function deleteEmployee(empId){
   appData.employees = appData.employees.filter(e => e.id !== empId);
   appData.tasks = appData.tasks.filter(t => t.assignedTo !== empId);
   saveLocal();
-  showToast('🗑️ Employee deleted', 'warning');
   renderEmployees();
   renderTasks();
+  showToast('🗑️ Employee deleted', 'warning');
+  
+  // Sync to cloud
+  try{ await Cloud.pushData('deleteEmployee', {employeeId: empId}); } catch(e){ console.error('Employee delete sync failed:', e); }
 }
 
 // ========== TASK MANAGEMENT ==========
