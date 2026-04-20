@@ -63,16 +63,33 @@ const ROLE_COLUMNS = {
 // ========== CLOUD SYNC ==========
 const Cloud = {
   async fetchData(){
-    const resp = await fetch(APP_SCRIPT_URL);
-    return await resp.json();
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
+    try {
+      const resp = await fetch(APP_SCRIPT_URL, { signal: controller.signal });
+      clearTimeout(timeoutId);
+      return await resp.json();
+    } catch(e) {
+      clearTimeout(timeoutId);
+      throw e;
+    }
   },
   async pushData(action, payload){
-    const resp = await fetch(APP_SCRIPT_URL, {
-      method:'POST',
-      headers:{ 'Content-Type':'text/plain' },
-      body: JSON.stringify({ action, ...payload })
-    });
-    return await resp.json();
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
+    try {
+      const resp = await fetch(APP_SCRIPT_URL, {
+        method:'POST',
+        headers:{ 'Content-Type':'text/plain' },
+        body: JSON.stringify({ action, ...payload }),
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+      return await resp.json();
+    } catch(e) {
+      clearTimeout(timeoutId);
+      throw e;
+    }
   }
 };
 
@@ -289,7 +306,7 @@ function handleLogout(){
 // ========== SESSION TIMEOUT ==========
 function startTimers(){
   clearTimers();
-  refreshTimer = setInterval(loadData, 180000); // 3 min
+  refreshTimer = setInterval(loadData, 60000); // 1 min for faster sync
   resetSessionTimeout();
   document.addEventListener('mousemove', resetSessionTimeout);
   document.addEventListener('keydown', resetSessionTimeout, true);
@@ -314,6 +331,9 @@ function resetSessionTimeout(){
 // ========== LOAD DATA ==========
 async function loadData(){
   setSyncStatus('syncing');
+  const syncTimeEl = document.getElementById('lastSyncTime');
+  if(syncTimeEl) syncTimeEl.textContent = 'Syncing...';
+  
   try {
     const data = await Cloud.fetchData();
     if(data.jobs || data.waiting || data.archive){
@@ -328,15 +348,17 @@ async function loadData(){
       if(Array.isArray(data.materials)) appData.materials = data.materials;
       if(Array.isArray(data.machines) && data.machines.length) appData.machines = data.machines;
       if(Array.isArray(data.categories)) appData.categories = data.categories;
+      if(Array.isArray(data.employees)) appData.employees = data.employees;
+      if(Array.isArray(data.tasks)) appData.tasks = data.tasks;
       if(data.settings) Object.assign(appData.settings, data.settings);
       if(data.pins) Object.assign(appData.pins, data.pins);
     }
     saveLocal();
     setSyncStatus('synced');
-    document.getElementById('lastSyncTime').textContent = 'Synced ' + new Date().toLocaleTimeString();
+    if(syncTimeEl) syncTimeEl.textContent = 'Synced ' + new Date().toLocaleTimeString();
   } catch(e){
     setSyncStatus('error');
-    document.getElementById('lastSyncTime').textContent = 'Sync failed';
+    if(syncTimeEl) syncTimeEl.textContent = 'Sync failed - click to retry';
   }
   renderCurrentView();
   updateKPIs();
@@ -929,23 +951,23 @@ async function saveJob(){
   addActivity(job, isEdit?'Job edited':'Job created', currentRole);
   saveLocal();
   closeModal('jobModal');
+  renderDashboard(); // Render immediately for faster UI
+  updateKPIs();
   showToast(isEdit ? '✅ Job updated' : '✅ Job created: '+job.id, 'success');
   if(!isEdit) addNotification('🆕 New job created: '+job.id+' — '+job.name+' (by '+currentRole+')', job.id);
   try{
     await Cloud.pushData(isEdit?'updateJob':'createJob', job);
   } catch(e){}
-  renderDashboard();
-  updateKPIs();
 }
 
 async function deleteJob(jid){
   if(!confirm('Delete job '+jid+'? This cannot be undone.')) return;
   appData.jobs = appData.jobs.filter(j => j.id!==jid);
   saveLocal();
+  renderDashboard(); // Render immediately for faster UI
+  updateKPIs();
   showToast('🗑️ Job deleted','warning');
   try{ await Cloud.pushData('deleteJob',{jobId:jid}); } catch(e){}
-  renderDashboard();
-  updateKPIs();
 }
 
 async function moveJob(jid, toStatus){
@@ -955,10 +977,10 @@ async function moveJob(jid, toStatus){
   job.status = toStatus;
   addActivity(job, `Moved from ${from} → ${toStatus}`, currentRole);
   saveLocal();
+  renderDashboard(); // Render immediately before cloud sync for faster UI
+  updateKPIs();
   showToast('✅ Moved to '+toStatus,'success');
   try{ await Cloud.pushData('moveJob',{jobId:jid, status:toStatus}); } catch(e){}
-  renderDashboard();
-  updateKPIs();
 }
 
 // ========== APPROVE JOB (waiting → printing, no machine modal) ==========
@@ -1108,19 +1130,38 @@ async function togglePin(jid){
   job.pinned = !job.pinned;
   addActivity(job, job.pinned?'Pinned':'Unpinned', currentRole);
   saveLocal();
+  renderDashboard(); // Render immediately for faster UI
   showToast(job.pinned?'📌 Pinned':'Unpinned','info');
   try{ await Cloud.pushData('updateJobField',{jobId:jid,field:'pinned',value:job.pinned}); } catch(e){}
-  renderDashboard();
 }
 async function toggleRework(jid){
   const job = appData.jobs.find(j => j.id===jid);
   if(!job) return;
   job.rework = !job.rework;
-  addActivity(job, job.rework?'Flagged for rework':'Rework flag removed', currentRole);
+  
+  // When marking as rework, move job back to waiting status
+  const prevStatus = job.status;
+  if(job.rework && prevStatus !== 'waiting'){
+    job.status = 'waiting';
+    addActivity(job, `Flagged for rework & moved from ${prevStatus} → waiting`, currentRole);
+  } else {
+    addActivity(job, job.rework?'Flagged for rework':'Rework flag removed', currentRole);
+  }
+  
   saveLocal();
-  showToast(job.rework?'🔄 Marked as rework':'Rework flag removed','info');
-  try{ await Cloud.pushData('updateJobField',{jobId:jid,field:'rework',value:job.rework}); } catch(e){}
-  renderDashboard();
+  renderDashboard(); // Render immediately for faster UI response
+  updateKPIs();
+  
+  if(job.rework && prevStatus !== 'waiting'){
+    showToast('🔄 Marked as rework & moved to waiting','info');
+    try{ 
+      await Cloud.pushData('updateJobField',{jobId:jid,field:'rework',value:job.rework}); 
+      await Cloud.pushData('moveJob',{jobId:jid, status:'waiting'}); 
+    } catch(e){}
+  } else {
+    showToast(job.rework?'🔄 Marked as rework':'Rework flag removed','info');
+    try{ await Cloud.pushData('updateJobField',{jobId:jid,field:'rework',value:job.rework}); } catch(e){}
+  }
 }
 
 // ========== ACTIVITY ==========
