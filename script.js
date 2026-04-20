@@ -2127,9 +2127,9 @@ function renderEmployees(){
         <div class="employee-pin-info">🔐 PIN: ${emp.pin ? '****' : 'Not set'}</div>
       </div>
       <div class="employee-card-actions">
-        <button class="btn-secondary" onclick="openTaskModal('${emp.id}')">📋 Assign Task</button>
-        <button class="btn-secondary" onclick="editEmployee('${emp.id}')">✏️ Edit</button>
-        <button class="btn-secondary" style="color:var(--danger)" onclick="deleteEmployee('${emp.id}')">🗑️</button>
+        <button class="btn-secondary emp-action-btn" onclick="openTaskModal('${emp.id}')"><span class="btn-icon-wrapper">📋</span><span class="btn-text">Assign Task</span></button>
+        <button class="btn-secondary emp-action-btn" onclick="editEmployee('${emp.id}')"><span class="btn-icon-wrapper">✏️</span><span class="btn-text">Edit</span></button>
+        <button class="btn-secondary emp-action-btn btn-danger-icon" onclick="deleteEmployee('${emp.id}')"><span class="btn-icon-wrapper">🗑️</span></button>
       </div>
     </div>
   `;

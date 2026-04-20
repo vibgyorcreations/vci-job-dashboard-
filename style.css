@@ -2839,3 +2839,86 @@ body::before {
   font-weight: 600;
   margin-top: 6px;
 }
+
+/* ========== EMPLOYEE CARD BUTTON ALIGNMENT ========== */
+.emp-action-btn {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 14px !important;
+  font-size: 13px !important;
+  font-weight: 600;
+  white-space: nowrap;
+  border-radius: 10px;
+  transition: all 0.2s ease;
+}
+
+.emp-action-btn .btn-icon-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.emp-action-btn .btn-text {
+  font-size: 12px;
+  letter-spacing: 0.3px;
+}
+
+.emp-action-btn.btn-danger-icon {
+  color: var(--danger) !important;
+  min-width: auto;
+  padding: 10px 12px !important;
+}
+
+.emp-action-btn.btn-danger-icon:hover {
+  background: rgba(255,23,68,0.15);
+}
+
+.employee-card-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: nowrap;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* ========== PWA INSTALL BUTTON ENHANCEMENT ========== */
+.btn-pwa-install {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 20px;
+  background: linear-gradient(135deg, #00d084, #00b060);
+  color: #fff;
+  border: none;
+  padding: 14px 28px;
+  border-radius: 14px;
+  font-weight: 700;
+  font-size: 15px;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(0,208,132,0.35);
+  transition: all 0.25s ease;
+  width: 100%;
+  animation: pwa-pulse 2.5s ease-in-out infinite;
+}
+
+.btn-pwa-install:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 28px rgba(0,208,132,0.5);
+  background: linear-gradient(135deg, #00e090, #00c070);
+}
+
+.btn-pwa-install:active {
+  transform: translateY(-1px);
+}
+
+@keyframes pwa-pulse {
+  0%, 100% { box-shadow: 0 4px 20px rgba(0,208,132,0.35); }
+  50% { box-shadow: 0 4px 30px rgba(0,208,132,0.55); }
+}
