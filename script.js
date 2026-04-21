@@ -272,7 +272,7 @@ function updatePinDots(){
 function checkPin(){
   // Handle employee login with their own PIN
   if(pendingRole === 'employee' && currentEmployee){
-    const expected = currentEmployee.pin || '0000';
+    const expected = String(currentEmployee.pin || '0000');
     if(pinBuffer === expected){
       loginAsEmployee(currentEmployee);
     } else {
@@ -1889,7 +1889,7 @@ function renderEmployeeLoginList(){
     <div class="employee-list-item" onclick="selectEmployeeLogin('${emp.id}')">
       <div class="emp-avatar">${getInitials(emp.name)}</div>
       <div class="emp-info">
-        <div class="emp-name">${escHtml(emp.name)}</div>
+        <div class="emp-name">${escHtml(emp.name)}${emp.pin && String(emp.pin).length === 4 ? ' 🔒' : ''}</div>
         <div class="emp-dept">${getDepartmentName(emp.department)}</div>
       </div>
     </div>
@@ -1901,7 +1901,7 @@ function selectEmployeeLogin(empId){
   if(!emp) return;
   
   // If employee has a PIN, show PIN entry
-  if(emp.pin && emp.pin.length === 4){
+  if(emp.pin && String(emp.pin).length === 4){
     pendingRole = 'employee';
     currentEmployee = emp;
     pinBuffer = '';
@@ -2331,7 +2331,7 @@ function renderTasks(){
         ` : ''}
       </div>
       <div class="task-actions">
-        <button class="btn-icon" onclick="viewTaskDetails('${task.id}')" title="View Details">👁️</button>
+        <button class="btn-icon" onclick="viewTaskDetails('${task.id}')" title="View Details">👁️ View</button>
         <button class="btn-icon" onclick="editTask('${task.id}')" title="Edit">✏️</button>
         <button class="btn-icon" onclick="deleteTask('${task.id}')" title="Delete" style="color:var(--danger)">🗑️</button>
       </div>
