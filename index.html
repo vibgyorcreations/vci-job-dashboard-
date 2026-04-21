@@ -370,6 +370,7 @@
             <select id="taskFilterEmployee" class="filter-select" onchange="renderTasks()">
               <option value="">All Employees</option>
             </select>
+            <button class="btn-primary" onclick="openTaskModal(document.getElementById('taskFilterEmployee').value || '')">➕ Assign Task</button>
           </div>
         </div>
         <div class="tasks-list glass" id="tasksList">
