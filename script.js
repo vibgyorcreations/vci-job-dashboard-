@@ -13,7 +13,7 @@ let appData = {
   notifications: [],
   employees: [],
   tasks: [],
-  settings: { companyName:'FactoryFlow OS', companyLogo:'', driveFolderId:'', theme:'dark', accentColor:'#00f0ff' },
+  settings: { companyName:'FactoryFlow OS', companyLogo:'', driveFolderId:'', theme:'dark', accentColor:'#3b82f6' },
   pins: { admin:'1234', waiting:'1111', printing:'2222', assembly:'3333', dispatch:'4444' }
 };
 
@@ -371,6 +371,10 @@ function setSyncStatus(s){
 
 // ========== RENDER VIEWS ==========
 function renderCurrentView(){
+  if(currentRole === 'employee' && currentEmployee){
+    renderEmployeeFullTasks(currentEmpTab || 'current');
+    return;
+  }
   if(currentView === 'dashboard') renderDashboard();
   else if(currentView === 'archive') renderArchive();
   else if(currentView === 'analytics') renderAnalytics();
@@ -1687,7 +1691,7 @@ async function deleteMachine(mid){
 function loadSettingsForm(){
   document.getElementById('settingCompanyName').value   = appData.settings.companyName||'';
   document.getElementById('settingCompanyLogo').value   = appData.settings.companyLogo||'';
-  document.getElementById('settingAccentColor').value   = appData.settings.accentColor||'#00f0ff';
+  document.getElementById('settingAccentColor').value   = appData.settings.accentColor||'#3b82f6';
   document.getElementById('settingDriveFolderId').value = appData.settings.driveFolderId||'';
   document.getElementById('pinAdmin').value    = appData.pins.admin||'';
   document.getElementById('pinWaiting').value  = appData.pins.waiting||'';
@@ -1844,6 +1848,12 @@ function showEmployeeLogin(){
   document.getElementById('employeeLoginBtn').classList.add('hidden');
   document.getElementById('employeeLoginToggle').classList.add('hidden');
   renderEmployeeLoginList();
+  // If no employees yet, trigger a background sync and show loading state
+  if(appData.employees.length === 0){
+    const list = document.getElementById('employeeLoginList');
+    if(list) list.innerHTML = '<div class="employee-list-loading"><span class="login-sync-spinner"></span>Loading employee profiles…</div>';
+    loadData().then(() => renderEmployeeLoginList()).catch(() => renderEmployeeLoginList());
+  }
 }
 
 function backToRolesFromEmployee(){
@@ -2033,7 +2043,7 @@ function renderEmployeeFullTasks(filter = 'current'){
     const isInProgress = task.status === 'in-progress';
     const isPending = task.status === 'pending';
     
-    const priorityColors = { low: '#00ff88', medium: '#ffd000', high: '#ff1744' };
+    const priorityColors = { low: '#10b981', medium: '#f59e0b', high: '#ef4444' };
     const priorityIcons = { low: '🟢', medium: '🟡', high: '🔴' };
     
     // Format dates
@@ -2047,7 +2057,7 @@ function renderEmployeeFullTasks(filter = 'current'){
           ${isPending ? '📋' : isInProgress ? '⏳' : '✅'} 
           <span class="status-text">${task.status.replace('-', ' ').toUpperCase()}</span>
         </div>
-        <div class="emp-task-card-priority" style="color: ${priorityColors[task.priority] || '#ffd000'}">
+        <div class="emp-task-card-priority" style="color: ${priorityColors[task.priority] || '#f59e0b'}">
           ${priorityIcons[task.priority] || '🟡'} ${task.priority.toUpperCase()}
         </div>
       </div>
@@ -2488,7 +2498,7 @@ function viewTaskDetails(taskId){
   const emp = appData.employees.find(e => e.id === task.assignedTo);
   const job = task.relatedJob ? appData.jobs.find(j => j.id === task.relatedJob) : null;
   const statusIcon = task.status === 'completed' ? '✅' : task.status === 'in-progress' ? '⏳' : '📋';
-  const priorityColors = { low: '#00ff88', medium: '#ffd000', high: '#ff1744' };
+  const priorityColors = { low: '#10b981', medium: '#f59e0b', high: '#ef4444' };
   const priorityIcons = { low: '🟢', medium: '🟡', high: '🔴' };
   
   // Build work notes HTML
