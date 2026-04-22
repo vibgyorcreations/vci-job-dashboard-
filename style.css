@@ -1559,16 +1559,19 @@ body::before {
 .employee-card-actions {
   display: flex;
   gap: 8px;
-  flex-wrap: wrap;
-  justify-content: center;
+  flex-wrap: nowrap;
+  justify-content: space-between;
+  align-items: center;
 }
 .employee-card-actions button {
   flex: 1;
-  min-width: 80px;
-  padding: 8px 12px;
-  font-size: 12px;
+  min-width: 0;
+  padding: 7px 10px;
+  font-size: 11px;
   text-align: center;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* ========== TASKS LIST ========== */
@@ -1809,16 +1812,14 @@ body::before {
 }
 
 .emp-full-logo {
-  font-size: 28px;
+  font-size: 24px;
 }
 
 .emp-full-company {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 700;
-  background: linear-gradient(135deg, var(--primary), var(--secondary));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--text);
+  letter-spacing: -0.2px;
 }
 
 .emp-full-user {
@@ -1903,34 +1904,32 @@ body::before {
 }
 
 .emp-full-greeting {
-  font-size: 28px;
+  font-size: 22px;
   font-weight: 700;
-  margin-bottom: 24px;
-  background: linear-gradient(135deg, var(--primary), var(--secondary));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  margin-bottom: 20px;
+  color: var(--text);
 }
 
 .emp-full-stats {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 16px;
-  margin-bottom: 24px;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 14px;
+  margin-bottom: 20px;
 }
 
 .emp-stat-card {
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
-  border-radius: 16px;
-  padding: 20px;
+  border-radius: 10px;
+  padding: 16px;
   text-align: center;
   transition: all .2s;
+  box-shadow: var(--neu-shadow-sm);
 }
 
 .emp-stat-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 32px rgba(59,130,246,0.15);
+  transform: translateY(-2px);
+  box-shadow: 0 5px 18px rgba(0,0,0,0.25);
 }
 
 .emp-stat-card.pending { border-left: 4px solid var(--warning); }
@@ -2877,46 +2876,31 @@ body::before {
   background: rgba(239,68,68,0.15);
 }
 
-.employee-card-actions {
-  display: flex;
-  gap: 8px;
-  flex-wrap: nowrap;
-  justify-content: space-between;
-  align-items: center;
-}
-
-/* ========== PWA INSTALL BUTTON ENHANCEMENT ========== */
+/* ========== PWA INSTALL BUTTON ========== */
 .btn-pwa-install {
   display: flex !important;
   align-items: center;
   justify-content: center;
   gap: 10px;
   margin-top: 20px;
-  background: linear-gradient(135deg, #10b981, #059669);
+  background: var(--primary);
   color: #fff;
   border: none;
-  padding: 14px 28px;
-  border-radius: 14px;
-  font-weight: 700;
-  font-size: 15px;
+  padding: 12px 24px;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 14px;
   cursor: pointer;
-  box-shadow: 0 4px 20px rgba(16,185,129,0.35);
-  transition: all 0.25s ease;
+  box-shadow: 0 2px 8px rgba(59,130,246,0.3);
+  transition: all 0.2s ease;
   width: 100%;
-  animation: pwa-pulse 2.5s ease-in-out infinite;
 }
 
 .btn-pwa-install:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 6px 28px rgba(16,185,129,0.5);
-  background: linear-gradient(135deg, #10b981, #059669);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(59,130,246,0.4);
 }
 
 .btn-pwa-install:active {
-  transform: translateY(-1px);
-}
-
-@keyframes pwa-pulse {
-  0%, 100% { box-shadow: 0 4px 20px rgba(16,185,129,0.35); }
-  50% { box-shadow: 0 4px 30px rgba(16,185,129,0.55); }
+  transform: translateY(0);
 }

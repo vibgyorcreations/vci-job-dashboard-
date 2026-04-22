@@ -4,8 +4,8 @@
   "description": "Factory Job Management Dashboard - Track jobs through waiting, printing, assembly, and dispatch stages",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0a0e1a",
-  "theme_color": "#00f0ff",
+  "background_color": "#111827",
+  "theme_color": "#3b82f6",
   "orientation": "any",
   "icons": [
     {
