@@ -173,14 +173,9 @@ body::before {
 /* Role Cards */
 .role-grid {
   display:grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(72px, 1fr));
   gap:10px;
   margin-bottom:8px;
-}
-@media (max-width: 480px) {
-  .role-grid { grid-template-columns: repeat(3, 1fr); }
-  .role-grid .role-card:nth-child(4) { grid-column: 1; }
-  .role-grid .role-card:nth-child(5) { grid-column: 2; }
 }
 .role-card {
   background:rgba(255,255,255,0.04);
