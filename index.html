@@ -31,19 +31,19 @@
     <p class="login-subtitle">Select your role to continue</p>
 
     <div id="roleSelect" class="role-grid">
-      <div class="role-card" data-role="admin" onclick="selectRole('admin')">
-        <div class="role-icon">👑</div><div class="role-name">Admin</div>
+      <div class="role-card role-card-admin" data-role="admin" onclick="selectRole('admin')">
+        <div class="role-icon">⚜️</div><div class="role-name">Admin</div>
       </div>
-      <div class="role-card" data-role="waiting" onclick="selectRole('waiting')">
+      <div class="role-card role-card-waiting" data-role="waiting" onclick="selectRole('waiting')">
         <div class="role-icon">📋</div><div class="role-name">Waiting</div>
       </div>
-      <div class="role-card" data-role="printing" onclick="selectRole('printing')">
+      <div class="role-card role-card-printing" data-role="printing" onclick="selectRole('printing')">
         <div class="role-icon">🖨️</div><div class="role-name">Printing</div>
       </div>
-      <div class="role-card" data-role="assembly" onclick="selectRole('assembly')">
+      <div class="role-card role-card-assembly" data-role="assembly" onclick="selectRole('assembly')">
         <div class="role-icon">🔧</div><div class="role-name">Assembly</div>
       </div>
-      <div class="role-card" data-role="dispatch" onclick="selectRole('dispatch')">
+      <div class="role-card role-card-dispatch" data-role="dispatch" onclick="selectRole('dispatch')">
         <div class="role-icon">📦</div><div class="role-name">Dispatch</div>
       </div>
     </div>
@@ -103,6 +103,17 @@
     <button id="pwaInstallBtn" class="btn-pwa-install hidden" onclick="installPWA()">
       <span style="font-size:18px">⬇️</span> Install FactoryFlow App
     </button>
+
+    <!-- Contact / Help -->
+    <div class="login-help-section">
+      <button class="login-help-btn" onclick="this.nextElementSibling.classList.toggle('hidden')">
+        <span class="login-help-icon">🛟</span> Help &amp; Support
+      </button>
+      <div class="login-help-details hidden">
+        <a href="tel:9884064692" class="login-help-contact"><span>📞</span> 9884064692</a>
+        <a href="mailto:mmohammedsiddique22@gmail.com" class="login-help-contact"><span>✉️</span> mmohammedsiddique22@gmail.com</a>
+      </div>
+    </div>
   </div>
 </div>
 

@@ -205,6 +205,53 @@ function updateClock(){
   if(el2) el2.textContent = t;
 }
 
+// ========== SOUND & DESKTOP NOTIFICATIONS ==========
+function requestNotificationPermission(){
+  if('Notification' in window && Notification.permission === 'default'){
+    Notification.requestPermission();
+  }
+}
+
+function playNotificationSound(type){
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    // Different tones for different notification types
+    if(type === 'task'){
+      osc.frequency.setValueAtTime(880, ctx.currentTime);
+      osc.frequency.setValueAtTime(1100, ctx.currentTime + 0.1);
+    } else if(type === 'complete'){
+      osc.frequency.setValueAtTime(660, ctx.currentTime);
+      osc.frequency.setValueAtTime(880, ctx.currentTime + 0.1);
+      osc.frequency.setValueAtTime(1100, ctx.currentTime + 0.2);
+    } else {
+      osc.frequency.setValueAtTime(880, ctx.currentTime);
+    }
+    osc.type = 'sine';
+    gain.gain.setValueAtTime(0.18, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.5);
+  } catch(e){}
+}
+
+function showDesktopNotification(title, body, type){
+  if(!('Notification' in window)) return;
+  if(Notification.permission !== 'granted') return;
+  try {
+    new Notification(title, {
+      body: body,
+      icon: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"%3E%3Crect fill="%230f172a" width="64" height="64" rx="12"/%3E%3Ctext x="32" y="44" font-size="36" text-anchor="middle"%3E🏭%3C/text%3E%3C/svg%3E',
+      badge: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"%3E%3Crect fill="%233b82f6" width="64" height="64" rx="12"/%3E%3Ctext x="32" y="44" font-size="36" text-anchor="middle"%3E🔔%3C/text%3E%3C/svg%3E',
+      tag: 'ffos-' + (type || 'general'),
+      renotify: true
+    });
+  } catch(e){}
+}
+
 // ========== LOGIN / AUTH ==========
 function showLogin(){
   document.getElementById('loginPage').classList.remove('hidden');
@@ -221,9 +268,10 @@ function showApp(){
   updateFab();
   document.getElementById('sessionRole').textContent = currentRole || '';
   setRoleIcon();
+  requestNotificationPermission();
 }
 function setRoleIcon(){
-  const icons = {admin:'👑',waiting:'📋',printing:'🖨️',assembly:'🔧',dispatch:'📦'};
+  const icons = {admin:'⚜️',waiting:'📋',printing:'🖨️',assembly:'🔧',dispatch:'📦'};
   const el = document.getElementById('sessionRoleIcon');
   if(el) el.textContent = icons[currentRole] || '👤';
 }
@@ -231,7 +279,7 @@ function selectRole(role){
   pendingRole = role;
   pinBuffer = '';
   updatePinDots();
-  const icons = {admin:'👑',waiting:'📋',printing:'🖨️',assembly:'🔧',dispatch:'📦'};
+  const icons = {admin:'⚜️',waiting:'📋',printing:'🖨️',assembly:'🔧',dispatch:'📦'};
   const names = {admin:'Admin',waiting:'Waiting',printing:'Printing',assembly:'Assembly',dispatch:'Dispatch'};
   document.getElementById('pinRoleLabel').textContent = (icons[role]||'') + ' ' + (names[role]||role) + ' — Enter PIN';
   document.getElementById('roleSelect').classList.add('hidden');
@@ -719,6 +767,8 @@ function addNotification(message, jobId){
   if(appData.notifications.length > 50) appData.notifications.length = 50;
   saveLocal();
   updateNotifBadge();
+  playNotificationSound('general');
+  showDesktopNotification('FactoryFlow OS', message, 'general');
 }
 function updateNotifBadge(){
   const badge = document.getElementById('notifBadge');
@@ -1934,6 +1984,7 @@ function loginAsEmployee(emp){
     employeeId: emp.id,
     ts: Date.now()
   }));
+  requestNotificationPermission();
   // Show full-screen employee dashboard instead of the main app
   showEmployeeFullDashboard();
 }
@@ -2178,7 +2229,6 @@ function renderEmployees(){
         <div class="employee-pin-info">🔐 PIN: ${emp.pin ? '****' : 'Not set'}</div>
       </div>
       <div class="employee-card-actions">
-        <button class="btn-secondary emp-action-btn" onclick="openTaskModal('${emp.id}')"><span class="btn-icon-wrapper">📋</span><span class="btn-text">Assign Task</span></button>
         <button class="btn-secondary emp-action-btn" onclick="editEmployee('${emp.id}')"><span class="btn-icon-wrapper">✏️</span><span class="btn-text">Edit</span></button>
         <button class="btn-secondary emp-action-btn btn-danger-icon" onclick="deleteEmployee('${emp.id}')"><span class="btn-icon-wrapper">🗑️</span></button>
       </div>
@@ -2751,6 +2801,7 @@ async function submitTaskCompletion(){
   saveLocal();
   closeModal('taskCompleteModal');
   showToast('✅ Task completed successfully!', 'success');
+  playNotificationSound('complete');
   renderEmployeeFullTasks(currentEmpTab);
   
   // Add notification to department
@@ -2934,6 +2985,13 @@ function addEmployeeNotification(empId, notification){
   });
   
   saveLocal();
+  // Sound & desktop notification for the currently logged-in employee
+  if(currentEmployee && currentEmployee.id === empId){
+    const soundType = (notification.type === 'task_assigned') ? 'task' : 'general';
+    playNotificationSound(soundType);
+    showDesktopNotification('FactoryFlow — ' + (notification.type === 'task_assigned' ? 'New Task' : 'Notification'), notification.message || 'You have a new notification', soundType);
+    updateEmployeeNotificationBadge();
+  }
 }
 
 // Add notification to all employees in a department

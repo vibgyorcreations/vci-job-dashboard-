@@ -132,43 +132,60 @@ body::before {
   position: relative;
   z-index: 1;
   overflow: hidden;
+  background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 40%, #0f2044 70%, #1a1a2e 100%);
 }
 
 .orb {
   position:fixed;
   border-radius:50%;
-  filter:blur(120px);
+  filter:blur(100px);
   pointer-events:none;
   z-index:0;
+  animation: orbFloat 14s ease-in-out infinite;
 }
-.orb1 { width:500px; height:500px; background:rgba(59,130,246,0.07); top:-120px; left:-120px; }
-.orb2 { width:400px; height:400px; background:rgba(99,102,241,0.06); bottom:-100px; right:-100px; }
-.orb3 { width:300px; height:300px; background:rgba(139,92,246,0.05); top:50%; left:50%; transform:translate(-50%,-50%); }
+.orb1 { width:520px; height:520px; background:rgba(59,130,246,0.12); top:-140px; left:-140px; animation-delay:0s; }
+.orb2 { width:440px; height:440px; background:rgba(139,92,246,0.10); bottom:-120px; right:-120px; animation-delay:-5s; }
+.orb3 { width:340px; height:340px; background:rgba(16,185,129,0.06); top:50%; left:50%; transform:translate(-50%,-50%); animation-delay:-9s; }
+@keyframes orbFloat {
+  0%,100%{transform:translate(0,0);}
+  50%{transform:translate(20px,30px);}
+}
+.orb3 { animation: orbFloat3 14s ease-in-out infinite; }
+@keyframes orbFloat3 {
+  0%,100%{transform:translate(-50%,-50%);}
+  50%{transform:translate(calc(-50% + 25px),calc(-50% - 20px));}
+}
 
 .login-box {
   position:relative; z-index:1;
-  width:100%; max-width:420px;
-  padding:40px 32px 32px;
+  width:100%; max-width:440px;
+  padding:40px 32px 28px;
   text-align:center;
   animation: fadeSlideUp .5s ease;
+  background: rgba(15,23,42,0.78);
+  border: 1px solid rgba(99,102,241,0.22);
+  box-shadow: 0 24px 60px rgba(0,0,0,0.55), 0 1px 0 rgba(255,255,255,0.06) inset;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
 }
-@keyframes fadeSlideUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+@keyframes fadeSlideUp { from{opacity:0;transform:translateY(24px)} to{opacity:1;transform:translateY(0)} }
 
 .login-logo-placeholder {
   font-size:44px; line-height:1;
   margin:0 auto 16px;
-  width:72px; height:72px;
+  width:76px; height:76px;
   display:flex; align-items:center; justify-content:center;
-  background:rgba(59,130,246,0.08);
-  border-radius:14px;
-  border:1px solid rgba(59,130,246,0.18);
+  background:linear-gradient(135deg,rgba(59,130,246,0.18),rgba(99,102,241,0.14));
+  border-radius:18px;
+  border:1px solid rgba(99,102,241,0.32);
+  box-shadow: 0 4px 20px rgba(59,130,246,0.2);
 }
 .login-logo-img {
   width:72px; height:72px; object-fit:contain;
   border-radius:16px; margin:0 auto 16px; display:block;
 }
-.login-title { font-size:22px; font-weight:700; color:var(--primary); margin-bottom:4px; letter-spacing:-0.3px; }
-.login-subtitle { font-size:13px; color:var(--text-muted); margin-bottom:28px; }
+.login-title { font-size:23px; font-weight:800; color:#c7d2fe; margin-bottom:4px; letter-spacing:-0.5px; }
+.login-subtitle { font-size:13px; color:rgba(148,163,184,0.8); margin-bottom:28px; }
 
 /* Role Cards */
 .role-grid {
@@ -179,26 +196,92 @@ body::before {
 }
 .role-card {
   background:rgba(255,255,255,0.04);
-  border:1px solid var(--glass-border);
-  border-radius:10px;
-  padding:14px 6px;
+  border:1px solid rgba(255,255,255,0.1);
+  border-radius:12px;
+  padding:14px 6px 12px;
   cursor:pointer;
-  transition:all .2s;
+  transition:all .22s;
   user-select:none;
   display:flex;
   flex-direction:column;
   align-items:center;
   justify-content:center;
+  position:relative;
+  overflow:hidden;
 }
+.role-card::before {
+  content:'';
+  position:absolute; inset:0;
+  opacity:0;
+  transition:opacity .22s;
+  border-radius:inherit;
+}
+.role-card:hover::before { opacity:1; }
 .role-card:hover {
-  background:rgba(59,130,246,0.08);
-  border-color:rgba(59,130,246,0.35);
-  transform:translateY(-2px);
-  box-shadow:0 4px 12px rgba(0,0,0,0.2);
+  transform:translateY(-3px);
+  box-shadow:0 6px 20px rgba(0,0,0,0.35);
 }
-.role-card.selected { background:rgba(59,130,246,0.12); border-color:var(--primary); box-shadow:0 0 0 2px rgba(59,130,246,0.2); }
-.role-icon { font-size:22px; margin-bottom:5px; }
-.role-name { font-size:10px; font-weight:600; color:var(--text); text-transform:uppercase; letter-spacing:.4px; }
+/* Per-role hover/selected tints */
+.role-card-admin { border-color:rgba(251,191,36,0.25); }
+.role-card-admin::before { background:linear-gradient(135deg,rgba(251,191,36,0.12),rgba(245,158,11,0.08)); }
+.role-card-admin:hover { border-color:rgba(251,191,36,0.5); }
+.role-card-admin.selected { background:rgba(251,191,36,0.14); border-color:rgba(251,191,36,0.6); box-shadow:0 0 0 2px rgba(251,191,36,0.2); }
+
+.role-card-waiting { border-color:rgba(245,158,11,0.22); }
+.role-card-waiting::before { background:linear-gradient(135deg,rgba(245,158,11,0.11),rgba(234,88,12,0.07)); }
+.role-card-waiting:hover { border-color:rgba(245,158,11,0.48); }
+.role-card-waiting.selected { background:rgba(245,158,11,0.14); border-color:rgba(245,158,11,0.55); box-shadow:0 0 0 2px rgba(245,158,11,0.18); }
+
+.role-card-printing { border-color:rgba(59,130,246,0.25); }
+.role-card-printing::before { background:linear-gradient(135deg,rgba(59,130,246,0.13),rgba(37,99,235,0.08)); }
+.role-card-printing:hover { border-color:rgba(59,130,246,0.5); }
+.role-card-printing.selected { background:rgba(59,130,246,0.15); border-color:rgba(59,130,246,0.6); box-shadow:0 0 0 2px rgba(59,130,246,0.2); }
+
+.role-card-assembly { border-color:rgba(139,92,246,0.25); }
+.role-card-assembly::before { background:linear-gradient(135deg,rgba(139,92,246,0.13),rgba(124,58,237,0.08)); }
+.role-card-assembly:hover { border-color:rgba(139,92,246,0.5); }
+.role-card-assembly.selected { background:rgba(139,92,246,0.15); border-color:rgba(139,92,246,0.6); box-shadow:0 0 0 2px rgba(139,92,246,0.2); }
+
+.role-card-dispatch { border-color:rgba(16,185,129,0.25); }
+.role-card-dispatch::before { background:linear-gradient(135deg,rgba(16,185,129,0.13),rgba(5,150,105,0.08)); }
+.role-card-dispatch:hover { border-color:rgba(16,185,129,0.5); }
+.role-card-dispatch.selected { background:rgba(16,185,129,0.15); border-color:rgba(16,185,129,0.6); box-shadow:0 0 0 2px rgba(16,185,129,0.2); }
+
+.role-card.selected { box-shadow:0 0 0 2px rgba(59,130,246,0.2); }
+.role-icon { font-size:24px; margin-bottom:6px; position:relative; z-index:1; }
+.role-name { font-size:9px; font-weight:700; color:rgba(203,213,225,0.85); text-transform:uppercase; letter-spacing:.6px; position:relative; z-index:1; }
+
+/* Contact / Help section on login */
+.login-help-section {
+  margin-top:20px;
+  border-top:1px solid rgba(255,255,255,0.07);
+  padding-top:14px;
+}
+.login-help-btn {
+  background:transparent; border:1px solid rgba(99,102,241,0.28);
+  color:rgba(148,163,184,0.8); font-size:12px; font-weight:600;
+  padding:7px 18px; border-radius:8px;
+  cursor:pointer; transition:all .18s;
+  display:inline-flex; align-items:center; gap:6px;
+}
+.login-help-btn:hover { border-color:rgba(99,102,241,0.55); color:#c7d2fe; background:rgba(99,102,241,0.08); }
+.login-help-icon { font-size:14px; }
+.login-help-details {
+  display:flex; flex-direction:column; gap:8px;
+  margin-top:10px;
+  background:rgba(99,102,241,0.07);
+  border:1px solid rgba(99,102,241,0.18);
+  border-radius:10px; padding:12px 16px;
+  animation:fadeSlideUp .25s ease;
+}
+.login-help-contact {
+  display:flex; align-items:center; gap:8px;
+  color:rgba(199,210,254,0.9); font-size:12px; font-weight:600;
+  text-decoration:none; padding:4px 0;
+  transition:color .15s;
+}
+.login-help-contact:hover { color:#a5b4fc; }
+.login-help-contact span { font-size:15px; }
 
 /* PIN Entry */
 .pin-entry { animation:fadeSlideUp .3s ease; }
@@ -274,8 +357,11 @@ body::before {
 }
 .sidebar.collapsed { width:60px; }
 .sidebar.collapsed .nav-label, .sidebar.collapsed .nav-hint, .sidebar.collapsed .sidebar-name { display:none; }
-.sidebar.collapsed .sidebar-brand { justify-content:center; }
+.sidebar.collapsed .sidebar-brand { justify-content:center; padding:18px 10px 16px; }
 .sidebar.collapsed .nav-item { justify-content:center; padding:14px; }
+.sidebar.collapsed .session-user { display:none; }
+.sidebar.collapsed .sidebar-footer { justify-content:center; padding:12px 8px; }
+.sidebar.collapsed .btn-logout { margin:0; }
 
 .sidebar-brand {
   display:flex; align-items:center; gap:12px;
@@ -524,30 +610,40 @@ body::before {
 .job-card {
   background:var(--glass-bg);
   border:1px solid var(--glass-border);
-  border-left:3px solid var(--primary);
-  border-radius:10px; padding:14px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-  transition:all .2s; cursor:default;
+  border-left:4px solid var(--primary);
+  border-radius:12px; padding:14px;
+  box-shadow: 0 3px 12px rgba(0,0,0,0.22), 0 1px 3px rgba(0,0,0,0.12);
+  transition:all .22s; cursor:default;
   position:relative; overflow:hidden;
   font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
 }
 .job-card::before {
-  content:''; position:absolute; inset:0;
-  background:linear-gradient(135deg,rgba(255,255,255,0.03),transparent);
+  content:''; position:absolute; top:0; left:0; right:0; height:3px;
+  background: var(--primary);
+  opacity:0.6;
   pointer-events:none;
 }
+/* Column-specific card stripe colors */
 .col-waiting-h ~ .jobs-list .job-card { border-left-color:var(--col-waiting); }
+.col-waiting-h ~ .jobs-list .job-card::before { background:linear-gradient(90deg,var(--col-waiting),rgba(245,158,11,0.4)); }
 .col-printing-h ~ .jobs-list .job-card { border-left-color:var(--col-printing); }
+.col-printing-h ~ .jobs-list .job-card::before { background:linear-gradient(90deg,var(--col-printing),rgba(59,130,246,0.4)); }
 .col-assembly-h ~ .jobs-list .job-card { border-left-color:var(--col-assembly); }
+.col-assembly-h ~ .jobs-list .job-card::before { background:linear-gradient(90deg,var(--col-assembly),rgba(139,92,246,0.4)); }
 .col-dispatch-h ~ .jobs-list .job-card { border-left-color:var(--col-dispatch); }
+.col-dispatch-h ~ .jobs-list .job-card::before { background:linear-gradient(90deg,var(--col-dispatch),rgba(16,185,129,0.4)); }
 
 .job-card:hover {
-  transform:translateY(-1px);
-  border-color:rgba(59,130,246,0.3);
-  box-shadow:0 5px 18px rgba(0,0,0,0.25);
+  transform:translateY(-2px);
+  box-shadow:0 8px 28px rgba(0,0,0,0.32), 0 2px 6px rgba(0,0,0,0.15);
 }
-.job-card.pinned { border-top:2px solid var(--warning); }
-.job-card.rework { border-top:2px solid var(--danger); }
+.col-waiting-h ~ .jobs-list .job-card:hover { box-shadow:0 8px 28px rgba(245,158,11,0.18), 0 2px 6px rgba(0,0,0,0.15); }
+.col-printing-h ~ .jobs-list .job-card:hover { box-shadow:0 8px 28px rgba(59,130,246,0.18), 0 2px 6px rgba(0,0,0,0.15); }
+.col-assembly-h ~ .jobs-list .job-card:hover { box-shadow:0 8px 28px rgba(139,92,246,0.18), 0 2px 6px rgba(0,0,0,0.15); }
+.col-dispatch-h ~ .jobs-list .job-card:hover { box-shadow:0 8px 28px rgba(16,185,129,0.18), 0 2px 6px rgba(0,0,0,0.15); }
+
+.job-card.pinned { border-top:3px solid var(--warning); }
+.job-card.rework { border-top:3px solid var(--danger); }
 
 .job-card-top {
   display:flex; align-items:center; justify-content:space-between;
@@ -921,18 +1017,20 @@ body::before {
     radial-gradient(ellipse 50% 30% at 85% 100%, rgba(79,70,229,0.03) 0%, transparent 55%);
 }
 /* Light mode login page specific */
-[data-theme="light"] .login-page { background: #eef1f7; }
-[data-theme="light"] .orb1 { background:rgba(37,99,235,0.06); }
-[data-theme="light"] .orb2 { background:rgba(79,70,229,0.05); }
-[data-theme="light"] .orb3 { background:rgba(99,102,241,0.04); }
+[data-theme="light"] .login-page {
+  background: linear-gradient(135deg, #e8edf6 0%, #dde6f5 40%, #e4ebf7 70%, #edf2fc 100%);
+}
+[data-theme="light"] .orb1 { background:rgba(37,99,235,0.09); }
+[data-theme="light"] .orb2 { background:rgba(79,70,229,0.07); }
+[data-theme="light"] .orb3 { background:rgba(99,102,241,0.05); }
 [data-theme="light"] .login-box {
-  background: rgba(249,250,253,0.98);
-  border-color: rgba(59,130,246,0.14);
-  box-shadow: 0 2px 32px rgba(37,99,235,0.08), 0 1px 4px rgba(0,0,0,0.06);
+  background: rgba(255,255,255,0.88);
+  border-color: rgba(59,130,246,0.18);
+  box-shadow: 0 12px 48px rgba(37,99,235,0.12), 0 2px 8px rgba(0,0,0,0.06);
 }
 [data-theme="light"] .login-logo-placeholder {
   background: rgba(37,99,235,0.07);
-  border-color: rgba(37,99,235,0.18);
+  border-color: rgba(37,99,235,0.2);
 }
 [data-theme="light"] .login-title { color: #1d4ed8; }
 [data-theme="light"] .login-subtitle { color: #64748b; }
@@ -943,7 +1041,6 @@ body::before {
 }
 [data-theme="light"] .role-card:hover {
   background: rgba(239,246,255,1);
-  border-color: rgba(37,99,235,0.35);
   box-shadow: 0 4px 14px rgba(37,99,235,0.1);
 }
 [data-theme="light"] .role-card.selected {
@@ -952,6 +1049,11 @@ body::before {
   box-shadow: 0 0 0 2px rgba(37,99,235,0.18);
 }
 [data-theme="light"] .role-name { color: #374151; }
+[data-theme="light"] .login-help-btn { border-color:rgba(59,130,246,0.28); color:#4b5563; }
+[data-theme="light"] .login-help-btn:hover { border-color:rgba(37,99,235,0.5); color:#1d4ed8; background:rgba(59,130,246,0.06); }
+[data-theme="light"] .login-help-details { background:rgba(239,246,255,0.9); border-color:rgba(59,130,246,0.22); }
+[data-theme="light"] .login-help-contact { color:#2563eb; }
+[data-theme="light"] .login-help-contact:hover { color:#1d4ed8; }
 [data-theme="light"] .pin-role-label { color: #1d4ed8; }
 [data-theme="light"] .pin-dot { border-color: rgba(59,130,246,0.3); }
 [data-theme="light"] .pin-dot.filled { background: #2563eb; border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.15); }
