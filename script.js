@@ -379,6 +379,7 @@ function resetSessionTimeout(){
 // ========== LOAD DATA ==========
 async function loadData(){
   setSyncStatus('syncing');
+  showSyncLoader(true);
   const syncTimeEl = document.getElementById('lastSyncTime');
   if(syncTimeEl) syncTimeEl.textContent = 'Syncing...';
   
@@ -408,6 +409,7 @@ async function loadData(){
     setSyncStatus('error');
     if(syncTimeEl) syncTimeEl.textContent = 'Sync failed - click to retry';
   }
+  showSyncLoader(false);
   renderCurrentView();
   updateKPIs();
 }
@@ -415,6 +417,11 @@ function setSyncStatus(s){
   const dot = document.getElementById('syncDot');
   if(!dot) return;
   dot.className = 'sync-dot ' + s;
+}
+function showSyncLoader(show){
+  const el = document.getElementById('syncLoader');
+  if(!el) return;
+  if(show){ el.classList.remove('hidden'); } else { el.classList.add('hidden'); }
 }
 
 // ========== RENDER VIEWS ==========
@@ -1239,23 +1246,32 @@ function openTimeline(jid){
 // ========== ARCHIVE VIEW ==========
 function renderArchive(){
   const q = ((document.getElementById('archiveSearch')||{}).value||'').toLowerCase();
-  const from = (document.getElementById('reportDateFrom')||{}).value||'';
-  const to   = (document.getElementById('reportDateTo')||{}).value||'';
-  let jobs = appData.archive;
+  const from = (document.getElementById('archiveDateFrom')||{}).value||'';
+  const to   = (document.getElementById('archiveDateTo')||{}).value||'';
+  let jobs = appData.archive || [];
   if(q) jobs = jobs.filter(j => [j.id,j.client,j.name].some(v => v&&v.toLowerCase().includes(q)));
   if(from) jobs = jobs.filter(j => (j.archivedAt||j.createdAt||'')>=from);
   if(to)   jobs = jobs.filter(j => (j.archivedAt||j.createdAt||'')<=to+'T23:59:59');
   const tbody = document.getElementById('archiveBody');
+  const emptyEl = document.getElementById('archiveEmpty');
+  const tableWrap = document.getElementById('archiveTableWrap');
   if(!tbody) return;
-  if(!jobs.length){ tbody.innerHTML='<tr><td colspan="10" class="no-data">No archived jobs</td></tr>'; return; }
-  tbody.innerHTML = jobs.map(j => {
+  if(!jobs.length){
+    if(emptyEl) emptyEl.style.display = '';
+    if(tableWrap) tableWrap.style.display = 'none';
+    return;
+  }
+  if(emptyEl) emptyEl.style.display = 'none';
+  if(tableWrap) tableWrap.style.display = '';
+  tbody.innerHTML = jobs.slice().reverse().map(j => {
     const df = j.dispatchFinal||{};
+    const sqft = parseFloat(j.sqft||j.size||0) || 0;
     return `<tr>
       <td><span class="job-id-badge">${escHtml(j.id)}</span></td>
       <td>${escHtml(j.client||'-')}</td>
       <td>${escHtml(j.name||'-')}</td>
       <td>${escHtml(String(j.qty||j.quantity||'-'))}</td>
-      <td>${escHtml(String(j.sqft||j.size||'-'))}</td>
+      <td>${sqft > 0 ? sqft.toFixed(2) : '-'}</td>
       <td>${escHtml(Array.isArray(j.materials)?j.materials.join(', '):(j.material||j.materials||'-'))}</td>
       <td><span class="badge badge-${(j.priority||'medium').toLowerCase()}">${(j.priority||'-').toUpperCase()}</span></td>
       <td>${escHtml(df.courier||'-')}</td>
@@ -1267,9 +1283,9 @@ function renderArchive(){
 
 function exportArchiveCSV(){
   const headers = ['Job ID','Client','Job Name','Qty','Sq.Ft','Material','Priority','Courier','Tracking','Completed'];
-  const rows = appData.archive.map(j => {
+  const rows = (appData.archive||[]).map(j => {
     const df = j.dispatchFinal||{};
-    return [j.id,j.client,j.name,j.qty||j.quantity,j.sqft||j.size,j.material||j.materials,j.priority,df.courier||'',df.tracking||'',j.archivedAt?new Date(j.archivedAt).toLocaleDateString():''];
+    return [j.id,j.client,j.name,j.qty||j.quantity,j.sqft||j.size,Array.isArray(j.materials)?j.materials.join('|'):(j.material||j.materials||''),j.priority,df.courier||'',df.tracking||'',j.archivedAt?new Date(j.archivedAt).toLocaleDateString():''];
   });
   downloadCSV('archive-export.csv', headers, rows);
 }
@@ -1335,6 +1351,163 @@ function renderAnalytics(){
       {label:'Total Materials', val:appData.materials.length},
       {label:'Total Machines', val:appData.machines.length}
     ].map(r => `<div class="stat-row"><div class="stat-row-label">${r.label}</div><div class="stat-row-val">${r.val}</div></div>`).join('');
+  }
+
+  // Admin-only: Machine & Employee analytics
+  const machineSection = document.getElementById('machineAnalyticsSection');
+  const empSection     = document.getElementById('employeeAnalyticsSection');
+  if(currentRole === 'admin'){
+    if(machineSection) machineSection.classList.remove('hidden');
+    if(empSection)     empSection.classList.remove('hidden');
+    renderMachineAnalytics();
+    renderEmployeeAnalytics();
+  } else {
+    if(machineSection) machineSection.classList.add('hidden');
+    if(empSection)     empSection.classList.add('hidden');
+  }
+}
+
+// ========== MACHINE ANALYTICS ==========
+function renderMachineAnalytics(){
+  const allJobs = [...appData.jobs, ...(appData.archive||[])];
+
+  // --- Top machines by total sqft ---
+  const machineMap = {};
+  appData.machines.forEach(m => { machineMap[m.name] = { name:m.name, sqft:0, jobs:0 }; });
+  allJobs.forEach(j => {
+    const m = j.machine || '';
+    if(!m) return;
+    if(!machineMap[m]) machineMap[m] = { name:m, sqft:0, jobs:0 };
+    machineMap[m].sqft += parseFloat(j.sqft||j.size||0)||0;
+    machineMap[m].jobs++;
+  });
+  const machineList = Object.values(machineMap).sort((a,b)=>b.sqft-a.sqft);
+  const maxSqft = Math.max(1, ...machineList.map(m=>m.sqft));
+  const mChart = document.getElementById('machineUsageChart');
+  if(mChart){
+    if(!machineList.length){
+      mChart.innerHTML = '<div class="no-data-msg">No machine data. Set the Machine field on jobs.</div>';
+    } else {
+      mChart.innerHTML = machineList.map((m,i) => {
+        const colors = ['#ffe17c','#3b82f6','#10b981','#8b5cf6','#f59e0b','#ef4444'];
+        const c = colors[i % colors.length];
+        return `<div class="bar-row">
+          <div class="bar-label" style="min-width:130px;font-weight:700">${escHtml(m.name)}</div>
+          <div class="bar-track"><div class="bar-fill" style="width:${(m.sqft/maxSqft*100).toFixed(0)}%;background:${c};box-shadow:0 2px 8px ${c}44">
+            <span class="bar-val">${m.sqft.toFixed(1)} sq.ft &nbsp;(${m.jobs} jobs)</span>
+          </div></div>
+        </div>`;
+      }).join('');
+    }
+  }
+
+  // --- Daily sqft per machine (last 14 days) ---
+  const dailyChart = document.getElementById('machineDailyChart');
+  if(dailyChart){
+    const days14 = [];
+    for(let i=13;i>=0;i--){
+      const d = new Date(Date.now()-i*86400000);
+      days14.push(d.toISOString().split('T')[0]);
+    }
+    const machineDays = {};
+    machineList.forEach(m => { machineDays[m.name] = {}; });
+    allJobs.forEach(j => {
+      if(!j.machine) return;
+      const ds = ((j.archivedAt||j.updatedAt||j.createdAt||'')).split('T')[0];
+      if(!days14.includes(ds)) return;
+      if(!machineDays[j.machine]) machineDays[j.machine] = {};
+      machineDays[j.machine][ds] = (machineDays[j.machine][ds]||0) + (parseFloat(j.sqft||j.size||0)||0);
+    });
+    const mNames = Object.keys(machineDays).filter(n=>machineList.find(m=>m.name===n));
+    if(!mNames.length){
+      dailyChart.innerHTML = '<div class="no-data-msg">No machine history data yet.</div>';
+    } else {
+      const colorsRow = ['#ffe17c','#3b82f6','#10b981','#8b5cf6','#f59e0b'];
+      dailyChart.innerHTML = mNames.map((name,idx) => {
+        const c = colorsRow[idx % colorsRow.length];
+        const rowVals = days14.map(ds => {
+          const v = machineDays[name][ds]||0;
+          return `<span class="mday-cell" title="${ds}: ${v.toFixed(1)} sq.ft" style="background:${v?c+'aa':'rgba(255,255,255,0.04)'}; color:${v?'#111':'var(--text-muted)'}; font-size:11px; font-weight:700;">${v?v.toFixed(0):'-'}</span>`;
+        }).join('');
+        return `<div class="mday-row"><span class="mday-machine">${escHtml(name)}</span><div class="mday-cells">${rowVals}</div></div>`;
+      }).join('') + `<div class="mday-dates">${days14.map(ds=>`<span class="mday-date">${ds.slice(5)}</span>`).join('')}</div>`;
+    }
+  }
+
+  // --- Machine history table ---
+  const histBody = document.getElementById('machineHistoryBody');
+  if(histBody){
+    const rows = [];
+    const machineDaysAgg = {};
+    allJobs.forEach(j => {
+      if(!j.machine) return;
+      const ds = ((j.archivedAt||j.updatedAt||j.createdAt||'')).split('T')[0];
+      if(!ds) return;
+      const key = j.machine+'__'+ds;
+      if(!machineDaysAgg[key]) machineDaysAgg[key] = { machine:j.machine, date:ds, jobs:0, sqft:0 };
+      machineDaysAgg[key].jobs++;
+      machineDaysAgg[key].sqft += parseFloat(j.sqft||j.size||0)||0;
+    });
+    Object.values(machineDaysAgg).sort((a,b)=>b.date.localeCompare(a.date)||b.sqft-a.sqft).slice(0,50).forEach(r => {
+      rows.push(`<tr><td>${escHtml(r.machine)}</td><td>${r.date}</td><td>${r.jobs}</td><td>${r.sqft.toFixed(2)}</td></tr>`);
+    });
+    histBody.innerHTML = rows.length ? rows.join('') : '<tr><td colspan="4" class="no-data">No data — assign machines to jobs</td></tr>';
+  }
+}
+
+// ========== EMPLOYEE ANALYTICS ==========
+function renderEmployeeAnalytics(){
+  const empChart = document.getElementById('empTasksChart');
+  const empBody  = document.getElementById('empPerfBody');
+  const employees = appData.employees || [];
+  const tasks = appData.tasks || [];
+
+  const empStats = employees.map(emp => {
+    const empTasks = tasks.filter(t => t.assignedTo === emp.id || t.employeeId === emp.id);
+    const completed = empTasks.filter(t => t.status === 'completed').length;
+    const inProgress = empTasks.filter(t => t.status === 'in-progress').length;
+    const pending = empTasks.filter(t => t.status === 'pending' || !t.status).length;
+    return { name:emp.name, dept:emp.department||'-', total:empTasks.length, completed, inProgress, pending };
+  }).filter(e => e.total > 0).sort((a,b)=>b.completed-a.completed);
+
+  // Bar chart
+  if(empChart){
+    if(!empStats.length){
+      empChart.innerHTML = '<div class="no-data-msg">No task data for employees yet.</div>';
+    } else {
+      const maxC = Math.max(1,...empStats.map(e=>e.completed));
+      empChart.innerHTML = empStats.map((e,i) => {
+        const colors = ['#10b981','#3b82f6','#ffe17c','#8b5cf6','#f59e0b'];
+        const c = colors[i % colors.length];
+        return `<div class="bar-row">
+          <div class="bar-label" style="min-width:130px;font-weight:700">${escHtml(e.name)}</div>
+          <div class="bar-track"><div class="bar-fill" style="width:${(e.completed/maxC*100).toFixed(0)}%;background:${c};box-shadow:0 2px 8px ${c}44">
+            <span class="bar-val">${e.completed} done</span>
+          </div></div>
+        </div>`;
+      }).join('');
+    }
+  }
+
+  // Table
+  if(empBody){
+    if(!empStats.length){
+      empBody.innerHTML = '<tr><td colspan="7" class="no-data">No employee task data yet.</td></tr>';
+    } else {
+      empBody.innerHTML = empStats.map(e => {
+        const rate = e.total ? Math.round(e.completed/e.total*100) : 0;
+        const rateColor = rate>=80?'#10b981':rate>=50?'#f59e0b':'#ef4444';
+        return `<tr>
+          <td style="font-weight:700">${escHtml(e.name)}</td>
+          <td>${escHtml(getDepartmentName(e.dept))}</td>
+          <td>${e.total}</td>
+          <td style="color:#10b981;font-weight:700">${e.completed}</td>
+          <td style="color:#3b82f6;font-weight:700">${e.inProgress}</td>
+          <td style="color:#f59e0b;font-weight:700">${e.pending}</td>
+          <td><span style="color:${rateColor};font-weight:800">${rate}%</span></td>
+        </tr>`;
+      }).join('');
+    }
   }
 }
 

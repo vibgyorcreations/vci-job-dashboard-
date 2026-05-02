@@ -14,11 +14,68 @@
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%2300f0ff'/%3E%3Cstop offset='100%25' style='stop-color:%23ff00ff'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect fill='%230a0e1a' width='512' height='512' rx='80'/%3E%3Cpath fill='url(%23g)' d='M380 380H132V200l80-60v60h56v-60l80 60v-60l80 60v180z'/%3E%3Crect fill='url(%23g)' x='160' y='280' width='40' height='60' rx='4'/%3E%3Crect fill='url(%23g)' x='236' y='280' width='40' height='60' rx='4'/%3E%3Crect fill='url(%23g)' x='312' y='280' width='40' height='60' rx='4'/%3E%3C/svg%3E">
   <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%2300f0ff'/%3E%3Cstop offset='100%25' style='stop-color:%23ff00ff'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect fill='%230a0e1a' width='512' height='512' rx='80'/%3E%3Cpath fill='url(%23g)' d='M380 380H132V200l80-60v60h56v-60l80 60v-60l80 60v180z'/%3E%3Crect fill='url(%23g)' x='160' y='280' width='40' height='60' rx='4'/%3E%3Crect fill='url(%23g)' x='236' y='280' width='40' height='60' rx='4'/%3E%3Crect fill='url(%23g)' x='312' y='280' width='40' height='60' rx='4'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Satoshi:wght@400;500;700&display=swap" rel="stylesheet">
 </head>
 <body>
 
 <!-- TOAST CONTAINER -->
 <div id="toastContainer"></div>
+
+<!-- SYNC LOADER OVERLAY -->
+<div id="syncLoader" class="sync-loader-overlay hidden">
+  <div class="sync-loader-inner">
+    <!-- Truck SVG animation -->
+    <div class="truck-wrap">
+      <svg class="truck-svg" viewBox="0 0 480 200" xmlns="http://www.w3.org/2000/svg">
+        <!-- Road lines -->
+        <line class="road-line rl1" x1="0" y1="175" x2="480" y2="175" stroke="#ffe17c" stroke-width="2" stroke-dasharray="40 30" opacity="0.25"/>
+        <!-- Truck body -->
+        <g class="truck-body">
+          <!-- Cargo box -->
+          <rect x="60" y="90" width="240" height="75" rx="6" fill="#ffe17c"/>
+          <rect x="64" y="94" width="232" height="67" rx="4" fill="#f5cc3a"/>
+          <!-- Cargo door line -->
+          <line x1="220" y1="94" x2="220" y2="161" stroke="#d4aa10" stroke-width="2.5"/>
+          <!-- Cab -->
+          <rect x="300" y="105" width="110" height="60" rx="8" fill="#171e19"/>
+          <rect x="300" y="105" width="110" height="60" rx="8" fill="none" stroke="#ffe17c" stroke-width="2"/>
+          <!-- Cab window -->
+          <rect x="360" y="112" width="40" height="30" rx="4" fill="#4fd1c5" opacity="0.7"/>
+          <rect x="310" y="112" width="40" height="30" rx="4" fill="#4fd1c5" opacity="0.5"/>
+          <!-- Front bumper -->
+          <rect x="408" y="145" width="20" height="10" rx="3" fill="#b7c6c2"/>
+          <!-- Logo on cargo -->
+          <text x="140" y="133" font-family="Anton,sans-serif" font-size="18" fill="#171e19" text-anchor="middle" letter-spacing="1">FACTORYFLOW</text>
+          <!-- Exhaust pipe -->
+          <rect x="388" y="95" width="8" height="15" rx="2" fill="#b7c6c2"/>
+          <!-- Wheels -->
+          <circle cx="120" cy="170" r="22" fill="#171e19" stroke="#ffe17c" stroke-width="3" class="truck-wheel"/>
+          <circle cx="120" cy="170" r="10" fill="#ffe17c" class="truck-wheel-hub"/>
+          <circle cx="310" cy="170" r="22" fill="#171e19" stroke="#ffe17c" stroke-width="3" class="truck-wheel"/>
+          <circle cx="310" cy="170" r="10" fill="#ffe17c" class="truck-wheel-hub"/>
+          <circle cx="370" cy="170" r="22" fill="#171e19" stroke="#ffe17c" stroke-width="3" class="truck-wheel"/>
+          <circle cx="370" cy="170" r="10" fill="#ffe17c" class="truck-wheel-hub"/>
+        </g>
+        <!-- Smoke puffs -->
+        <g class="smoke-puffs">
+          <circle class="smoke s1" cx="392" cy="88" r="6" fill="#b7c6c2" opacity="0.5"/>
+          <circle class="smoke s2" cx="400" cy="76" r="5" fill="#b7c6c2" opacity="0.3"/>
+          <circle class="smoke s3" cx="395" cy="64" r="4" fill="#b7c6c2" opacity="0.15"/>
+        </g>
+      </svg>
+      <!-- Animated road lines (CSS keyframe) -->
+      <div class="road-scroll">
+        <div class="road-dash"></div><div class="road-dash"></div><div class="road-dash"></div>
+        <div class="road-dash"></div><div class="road-dash"></div><div class="road-dash"></div>
+        <div class="road-dash"></div><div class="road-dash"></div>
+      </div>
+    </div>
+    <div class="sync-loader-text">Syncing data<span class="dot-anim">...</span></div>
+    <div class="sync-loader-sub" id="syncLoaderSub">Connecting to server</div>
+  </div>
+</div>
 
 <!-- ========== LOGIN PAGE ========== -->
 <div id="loginPage" class="login-page">
@@ -249,13 +306,18 @@
         <h2 class="view-title">🗄️ Archive</h2>
         <div class="view-actions">
           <input type="text" id="archiveSearch" class="filter-select" placeholder="Search…" oninput="renderArchive()" style="min-width:180px">
-          <input type="date" id="reportDateFrom" class="filter-select">
-          <input type="date" id="reportDateTo" class="filter-select">
+          <input type="date" id="archiveDateFrom" class="filter-select">
+          <input type="date" id="archiveDateTo" class="filter-select">
           <button class="btn-primary" onclick="exportArchiveCSV()">&#11015; CSV</button>
           <button class="btn-secondary" onclick="printArchive()">🖨️ Print</button>
         </div>
       </div>
-      <div class="glass table-wrap">
+      <div id="archiveEmpty" class="glass" style="display:none;padding:40px;text-align:center;color:var(--text-muted);">
+        <div style="font-size:40px;margin-bottom:12px;">🗄️</div>
+        <div style="font-size:15px;font-weight:600;">No archived jobs found</div>
+        <div style="font-size:12px;margin-top:6px;">Jobs appear here after they are dispatched / archived</div>
+      </div>
+      <div class="glass table-wrap" id="archiveTableWrap">
         <table class="data-table">
           <thead><tr><th>Job ID</th><th>Client</th><th>Job Name</th><th>Qty</th><th>Sq.Ft</th><th>Material</th><th>Priority</th><th>Courier</th><th>Tracking</th><th>Completed</th></tr></thead>
           <tbody id="archiveBody"></tbody>
@@ -271,6 +333,48 @@
         <div class="glass analytics-card"><h3 class="analytics-title">Priority Distribution</h3><div class="bar-chart" id="priorityChart"></div></div>
         <div class="glass analytics-card analytics-full"><h3 class="analytics-title">Daily Throughput (Archived Jobs)</h3><div id="throughputHeatmap" class="heatmap"></div></div>
         <div class="glass analytics-card"><h3 class="analytics-title">Throughput Stats</h3><div id="throughputStats" class="stats-list"></div></div>
+      </div>
+      <!-- Machine Analytics — admin only -->
+      <div id="machineAnalyticsSection" class="hidden">
+        <div class="analytics-section-title">⚙️ Machine Analytics</div>
+        <div class="analytics-grid">
+          <div class="glass analytics-card analytics-full">
+            <h3 class="analytics-title">Top Machines by Sq.Ft Printed</h3>
+            <div class="bar-chart" id="machineUsageChart"></div>
+          </div>
+          <div class="glass analytics-card analytics-full">
+            <h3 class="analytics-title">Daily Sq.Ft per Machine (Last 14 Days)</h3>
+            <div id="machineDailyChart" class="machine-daily-chart"></div>
+          </div>
+          <div class="glass analytics-card analytics-full">
+            <h3 class="analytics-title">Machine Job History</h3>
+            <div class="table-wrap" style="overflow-x:auto">
+              <table class="data-table" id="machineHistoryTable">
+                <thead><tr><th>Machine</th><th>Date</th><th>Jobs</th><th>Sq.Ft</th></tr></thead>
+                <tbody id="machineHistoryBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Employee Analytics — admin only -->
+      <div id="employeeAnalyticsSection" class="hidden">
+        <div class="analytics-section-title">👥 Employee Analytics</div>
+        <div class="analytics-grid">
+          <div class="glass analytics-card analytics-full">
+            <h3 class="analytics-title">Tasks Completed per Employee</h3>
+            <div class="bar-chart" id="empTasksChart"></div>
+          </div>
+          <div class="glass analytics-card analytics-full">
+            <h3 class="analytics-title">Employee Performance Summary</h3>
+            <div class="table-wrap" style="overflow-x:auto">
+              <table class="data-table" id="empPerfTable">
+                <thead><tr><th>Employee</th><th>Department</th><th>Total Tasks</th><th>Completed</th><th>In Progress</th><th>Pending</th><th>Completion Rate</th></tr></thead>
+                <tbody id="empPerfBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
