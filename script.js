@@ -1455,6 +1455,11 @@ function renderMachineAnalytics(){
   }
 }
 
+// ========== TASK STATUS HELPERS ==========
+function isTaskCompleted(t) { return (t.status||'').toLowerCase() === 'completed'; }
+function isTaskInProgress(t) { const s = (t.status||'').toLowerCase(); return s === 'in-progress' || s === 'inprogress'; }
+function isTaskPending(t)    { const s = (t.status||'').toLowerCase(); return s === 'pending' || s === 'todo' || s === ''; }
+
 // ========== EMPLOYEE ANALYTICS ==========
 function renderEmployeeAnalytics(){
   const empChart = document.getElementById('empTasksChart');
@@ -1465,12 +1470,9 @@ function renderEmployeeAnalytics(){
   // Build stats for ALL employees (including 0-task ones)
   const empStats = employees.map(emp => {
     const empTasks = tasks.filter(t => t.assignedTo === emp.id || t.employeeId === emp.id);
-    const completed = empTasks.filter(t => (t.status||'').toLowerCase() === 'completed').length;
-    const inProgress = empTasks.filter(t => (t.status||'').toLowerCase() === 'in-progress' || (t.status||'').toLowerCase() === 'inprogress').length;
-    const pending = empTasks.filter(t => {
-      const s = (t.status||'').toLowerCase();
-      return s === 'pending' || s === '' || (s !== 'completed' && s !== 'in-progress' && s !== 'inprogress');
-    }).length;
+    const completed = empTasks.filter(isTaskCompleted).length;
+    const inProgress = empTasks.filter(isTaskInProgress).length;
+    const pending = empTasks.filter(isTaskPending).length;
     return { name:emp.name, dept:emp.department||'-', total:empTasks.length, completed, inProgress, pending };
   }).sort((a,b)=>b.completed-a.completed || b.total-a.total);
 
