@@ -114,6 +114,9 @@ function loadLocal(){
       if(parsed.pins)      Object.assign(appData.pins, parsed.pins);
     }
   } catch(e){}
+  // Theme is always local — override any stored appData.settings.theme with dedicated key
+  const localTheme = localStorage.getItem('ffos_theme');
+  if(localTheme) appData.settings.theme = localTheme;
   if(!appData.machines || !appData.machines.length) appData.machines = defaultMachines();
   if(!appData.categories) appData.categories = [];
   if(!appData.notifications) appData.notifications = [];
@@ -399,7 +402,11 @@ async function loadData(){
       if(Array.isArray(data.categories)) appData.categories = data.categories;
       if(Array.isArray(data.employees)) appData.employees = data.employees;
       if(Array.isArray(data.tasks)) appData.tasks = data.tasks;
-      if(data.settings) Object.assign(appData.settings, data.settings);
+      if(data.settings) {
+        const localTheme = appData.settings.theme; // preserve local theme
+        Object.assign(appData.settings, data.settings);
+        appData.settings.theme = localTheme; // never overwrite theme from cloud
+      }
       if(data.pins) Object.assign(appData.pins, data.pins);
     }
     saveLocal();
@@ -2142,6 +2149,7 @@ function applyBranding(){
 function applyTheme(theme){
   document.documentElement.setAttribute('data-theme', theme);
   appData.settings.theme = theme;
+  try { localStorage.setItem('ffos_theme', theme); } catch(e){}
   const btn = document.getElementById('themeBtn');
   if(btn) btn.textContent = theme==='dark' ? '🌙' : '☀️';
 }

@@ -167,7 +167,7 @@ body::before {
 .sidebar-logo-img img { width:32px; height:32px; border-radius:4px; object-fit:contain; }
 .sidebar-name {
   font-weight:800; font-size:14px; color:#ffe17c; line-height:1.2; white-space:nowrap;
-  font-family: 'Cabinet Grotesk', 'Anton', 'Segoe UI', sans-serif;
+  font-family: 'Cabinet Grotesk', 'Satoshi', 'Segoe UI', sans-serif;
   text-transform: uppercase; letter-spacing: -0.2px;
 }
 
@@ -997,7 +997,7 @@ body::before {
   box-shadow: 4px 4px 0 rgba(0,0,0,0.4);
 }
 .login-title {
-  font-family: 'Cabinet Grotesk', 'Anton', 'Segoe UI', sans-serif;
+  font-family: 'Cabinet Grotesk', 'Satoshi', 'Segoe UI', sans-serif;
   font-size:32px; font-weight:800; color:#ffe17c;
   margin-bottom:4px; letter-spacing:-0.5px;
   text-transform: uppercase; line-height:1;
