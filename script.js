@@ -2010,7 +2010,7 @@ function renderMachines(){
       ${m.notes ? `<div class="machine-notes">${escHtml(m.notes)}</div>` : ''}
       <div class="machine-capacity-bar" title="${pct.toFixed(0)}% utilisation"><div class="machine-capacity-fill" style="width:${pct.toFixed(0)}%"></div></div>
       <div class="machine-actions">
-        ${currentRole==='admin' ? `<button class="emp-analytics-link" onclick="openMachineAnalyticsModal('${escHtml(m.name)}')">📊 Analytics</button>` : ''}
+        ${currentRole==='admin' ? `<button class="emp-analytics-link" onclick="openMachineAnalyticsModal('${escHtml(m.name)}')">📊 Report</button>` : ''}
         <button class="btn-secondary" style="flex:1;padding:6px 10px;font-size:12px" onclick="openEditMachine('${escHtml(m.id)}')">✏️ Edit</button>
         <button class="btn-icon" onclick="deleteMachine('${escHtml(m.id)}')" style="color:var(--danger)" title="Delete machine">🗑️</button>
       </div>
@@ -2545,7 +2545,7 @@ function renderEmployees(){
     const completedTasks = appData.tasks.filter(t => t.assignedTo === emp.id && t.status === 'completed').length;
     const unreadNotifs = (emp.notifications || []).filter(n => !n.read).length;
     const analyticsBtn = currentRole === 'admin'
-      ? `<button class="emp-analytics-link" onclick="openEmpAnalyticsModal('${emp.id}')">📊 Analytics</button>`
+      ? `<button class="emp-analytics-link" onclick="openEmpAnalyticsModal('${emp.id}')">📊 Report</button>`
       : '';
     
     return `
