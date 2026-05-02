@@ -1352,6 +1352,13 @@ body::before {
 [data-theme="light"] .form-label { color: #6b5e3a; }
 [data-theme="light"] .toast { background: rgba(232,226,212,0.98); }
 [data-theme="light"] .toast-msg { color: #2c2410; }
+[data-theme="light"] #viewEmployees {
+  background-image:
+    linear-gradient(to right, rgba(100,80,20,0.07) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(100,80,20,0.07) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+[data-theme="light"] .section-header h3 { color: #7a5000; }
 
 
 /* ========== RESPONSIVE ========== */
@@ -1792,6 +1799,13 @@ body::before {
 
 .employees-section, .tasks-section {
   margin-bottom: 24px;
+}
+
+#viewEmployees {
+  background-image:
+    linear-gradient(to right, rgba(183,198,194,0.07) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(183,198,194,0.07) 1px, transparent 1px);
+  background-size: 40px 40px;
 }
 .section-header {
   display: flex;
@@ -3438,17 +3452,20 @@ body {
 
 /* Employee individual card analytics link */
 .emp-analytics-link {
-  display: inline-flex; align-items: center; gap: 5px;
+  display: flex; align-items: center; justify-content: center; gap: 5px;
   background: rgba(255,225,124,0.1);
   border: 1px solid rgba(255,225,124,0.3);
   color: #ffe17c;
   font-size: 11px; font-weight: 700;
-  padding: 4px 10px; border-radius: 4px;
+  padding: 7px 10px; border-radius: 4px;
   cursor: pointer;
   font-family: 'Cabinet Grotesk', sans-serif;
   text-transform: uppercase;
   transition: transform 120ms, box-shadow 120ms;
   box-shadow: 2px 2px 0 #000;
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
 }
 .emp-analytics-link:hover { transform: translate(2px,2px); box-shadow: none; }
 
