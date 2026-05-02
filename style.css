@@ -889,6 +889,17 @@ body::before {
     linear-gradient(to bottom, rgba(183,198,194,0.07) 1px, transparent 1px);
   background-size: 40px 40px;
 }
+/* Neo-Brutalism dot-pattern overlay for login box */
+.login-box::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background-image: radial-gradient(circle, rgba(255,225,124,0.12) 1px, transparent 1px);
+  background-size: 32px 32px;
+  z-index: 0;
+}
 
 .orb {
   position:fixed;
@@ -917,14 +928,14 @@ body::before {
   padding:40px 36px 28px;
   text-align:center;
   animation: fadeSlideUp .45s cubic-bezier(0.4,0,0.2,1);
-  background: rgba(23,30,25,0.92);
-  border: 1px solid rgba(255,225,124,0.18);
-  box-shadow: 0 24px 60px rgba(0,0,0,0.7), 0 1px 0 rgba(255,225,124,0.08) inset,
-              4px 4px 0 #ffe17c22;
+  background: rgba(23,30,25,0.95);
+  border: 2px solid #ffe17c;
+  box-shadow: 8px 8px 0px 0px #000000;
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
   border-radius: 4px;
 }
+.login-box > * { position: relative; z-index: 1; }
 @keyframes fadeSlideUp { from{opacity:0;transform:translateY(28px)} to{opacity:1;transform:translateY(0)} }
 
 .login-logo-placeholder {
@@ -945,9 +956,9 @@ body::before {
   box-shadow: 4px 4px 0 rgba(0,0,0,0.4);
 }
 .login-title {
-  font-family: 'Anton', 'Segoe UI', sans-serif;
-  font-size:30px; font-weight:400; color:#ffe17c;
-  margin-bottom:4px; letter-spacing:1px;
+  font-family: 'Cabinet Grotesk', 'Anton', 'Segoe UI', sans-serif;
+  font-size:32px; font-weight:800; color:#ffe17c;
+  margin-bottom:4px; letter-spacing:-0.5px;
   text-transform: uppercase; line-height:1;
 }
 .login-subtitle {
@@ -963,12 +974,12 @@ body::before {
   margin-bottom:10px;
 }
 .role-card {
-  background: rgba(39,39,39,0.8);
-  border: 1.5px solid rgba(183,198,194,0.15);
+  background: rgba(39,39,39,0.9);
+  border: 2px solid rgba(183,198,194,0.3);
   border-radius: 4px;
   padding:16px 6px 13px;
   cursor:pointer;
-  transition: transform 300ms cubic-bezier(0.4,0,0.2,1), box-shadow 300ms cubic-bezier(0.4,0,0.2,1), border-color 200ms;
+  transition: transform 150ms cubic-bezier(0.4,0,0.2,1), box-shadow 150ms cubic-bezier(0.4,0,0.2,1), border-color 150ms;
   user-select:none;
   display:flex;
   flex-direction:column;
@@ -976,6 +987,7 @@ body::before {
   justify-content:center;
   position:relative;
   overflow:hidden;
+  box-shadow: 4px 4px 0px 0px #000000;
 }
 .role-card::before {
   content:'';
@@ -986,41 +998,46 @@ body::before {
 }
 .role-card:hover::before { opacity:1; }
 .role-card:hover {
-  transform:translateY(-4px);
-  box-shadow: 0 8px 24px rgba(0,0,0,0.45), 4px 4px 0 rgba(255,225,124,0.35);
+  transform: translate(4px, 4px);
+  box-shadow: 0px 0px 0px 0px #000000;
 }
-/* Per-role tints — brutalist accent */
-.role-card-admin { border-color:rgba(255,225,124,0.4); }
+.role-card:active {
+  transform: translate(4px, 4px);
+  box-shadow: none;
+}
+/* Per-role tints — Neo-Brutalism accent */
+.role-card-admin { border-color:rgba(255,225,124,0.5); }
 .role-card-admin::before { background:linear-gradient(135deg,rgba(255,225,124,0.14),rgba(245,158,11,0.07)); }
 .role-card-admin:hover { border-color:#ffe17c; }
-.role-card-admin.selected { background:rgba(255,225,124,0.16); border-color:#ffe17c; box-shadow:0 0 0 2px rgba(255,225,124,0.35),4px 4px 0 #ffe17c44; }
+.role-card-admin.selected { background:rgba(255,225,124,0.16); border-color:#ffe17c; transform:translate(4px,4px); box-shadow:0 0 0 0 #000; }
 
-.role-card-waiting { border-color:rgba(245,158,11,0.3); }
+.role-card-waiting { border-color:rgba(245,158,11,0.4); }
 .role-card-waiting::before { background:linear-gradient(135deg,rgba(245,158,11,0.12),rgba(234,88,12,0.07)); }
-.role-card-waiting:hover { border-color:rgba(245,158,11,0.7); }
-.role-card-waiting.selected { background:rgba(245,158,11,0.16); border-color:#f59e0b; box-shadow:0 0 0 2px rgba(245,158,11,0.3),4px 4px 0 #f59e0b44; }
+.role-card-waiting:hover { border-color:rgba(245,158,11,0.9); }
+.role-card-waiting.selected { background:rgba(245,158,11,0.16); border-color:#f59e0b; transform:translate(4px,4px); box-shadow:none; }
 
-.role-card-printing { border-color:rgba(59,130,246,0.3); }
+.role-card-printing { border-color:rgba(59,130,246,0.4); }
 .role-card-printing::before { background:linear-gradient(135deg,rgba(59,130,246,0.14),rgba(37,99,235,0.07)); }
-.role-card-printing:hover { border-color:rgba(59,130,246,0.7); }
-.role-card-printing.selected { background:rgba(59,130,246,0.16); border-color:#3b82f6; box-shadow:0 0 0 2px rgba(59,130,246,0.3),4px 4px 0 #3b82f644; }
+.role-card-printing:hover { border-color:rgba(59,130,246,0.9); }
+.role-card-printing.selected { background:rgba(59,130,246,0.16); border-color:#3b82f6; transform:translate(4px,4px); box-shadow:none; }
 
-.role-card-assembly { border-color:rgba(139,92,246,0.3); }
+.role-card-assembly { border-color:rgba(139,92,246,0.4); }
 .role-card-assembly::before { background:linear-gradient(135deg,rgba(139,92,246,0.14),rgba(124,58,237,0.07)); }
-.role-card-assembly:hover { border-color:rgba(139,92,246,0.7); }
-.role-card-assembly.selected { background:rgba(139,92,246,0.16); border-color:#8b5cf6; box-shadow:0 0 0 2px rgba(139,92,246,0.3),4px 4px 0 #8b5cf644; }
+.role-card-assembly:hover { border-color:rgba(139,92,246,0.9); }
+.role-card-assembly.selected { background:rgba(139,92,246,0.16); border-color:#8b5cf6; transform:translate(4px,4px); box-shadow:none; }
 
-.role-card-dispatch { border-color:rgba(16,185,129,0.3); }
+.role-card-dispatch { border-color:rgba(16,185,129,0.4); }
 .role-card-dispatch::before { background:linear-gradient(135deg,rgba(16,185,129,0.14),rgba(5,150,105,0.07)); }
-.role-card-dispatch:hover { border-color:rgba(16,185,129,0.7); }
-.role-card-dispatch.selected { background:rgba(16,185,129,0.16); border-color:#10b981; box-shadow:0 0 0 2px rgba(16,185,129,0.3),4px 4px 0 #10b98144; }
+.role-card-dispatch:hover { border-color:rgba(16,185,129,0.9); }
+.role-card-dispatch.selected { background:rgba(16,185,129,0.16); border-color:#10b981; transform:translate(4px,4px); box-shadow:none; }
 
 .role-icon { font-size:26px; margin-bottom:7px; position:relative; z-index:1; }
 .role-name {
-  font-family: 'Satoshi','Segoe UI',sans-serif;
-  font-size:9px; font-weight:700; color:#b7c6c2;
+  font-family: 'Cabinet Grotesk', 'Satoshi','Segoe UI',sans-serif;
+  font-size:9px; font-weight:800; color:#b7c6c2;
   text-transform:uppercase; letter-spacing:.8px; position:relative; z-index:1;
 }
+.role-card:hover .role-name, .role-card.selected .role-name { color:#ffe17c; }
 
 /* Contact / Help section on login */
 .login-help-section {
@@ -1060,9 +1077,9 @@ body::before {
 /* PIN Entry */
 .pin-entry { animation:fadeSlideUp .3s ease; }
 .pin-role-label {
-  font-family:'Anton','Segoe UI',sans-serif;
-  font-size:18px; font-weight:400; color:#ffe17c;
-  margin-bottom:20px; letter-spacing:1px; text-transform:uppercase;
+  font-family:'Cabinet Grotesk','Anton','Segoe UI',sans-serif;
+  font-size:18px; font-weight:800; color:#ffe17c;
+  margin-bottom:20px; letter-spacing:-0.3px; text-transform:uppercase;
 }
 .pin-dots { display:flex; gap:14px; justify-content:center; margin-bottom:20px; }
 .pin-dot {
@@ -1094,26 +1111,29 @@ body::before {
   margin:0 auto 20px;
 }
 .pin-key {
-  background:rgba(39,39,39,0.7);
-  border:1.5px solid rgba(183,198,194,0.15);
+  background:rgba(39,39,39,0.9);
+  border:2px solid rgba(183,198,194,0.25);
   color:#f1f5f9;
   font-size:22px; font-weight:700;
   padding:16px; border-radius:4px;
-  cursor:pointer; transition:all .15s;
+  cursor:pointer; transition:transform 150ms, box-shadow 150ms, border-color 150ms;
   user-select:none;
-  font-family:'Anton','Segoe UI',sans-serif;
+  font-family:'Cabinet Grotesk','Anton','Segoe UI',sans-serif;
+  box-shadow: 4px 4px 0px 0px #000000;
 }
-.pin-key:hover { background:rgba(255,225,124,0.1); border-color:#ffe17c; color:#ffe17c; }
-.pin-key:active { transform:scale(0.95); box-shadow:inset 0 2px 6px rgba(0,0,0,0.35); }
+.pin-key:hover { background:rgba(255,225,124,0.12); border-color:#ffe17c; color:#ffe17c; transform:translate(2px,2px); box-shadow:2px 2px 0 #000; }
+.pin-key:active { transform:translate(4px,4px); box-shadow:0 0 0 #000; }
 .pin-key-clear { font-size:12px; font-weight:900; color:var(--warning); font-family:'Satoshi','Segoe UI',sans-serif; }
 .pin-key-back { font-size:16px; color:var(--text-muted); }
 .btn-back-role {
-  background:transparent; border:1.5px solid rgba(183,198,194,0.18);
+  background:transparent; border:2px solid rgba(183,198,194,0.3);
   color:#b7c6c2; padding:9px 22px; border-radius:4px;
-  cursor:pointer; font-size:13px; transition:all .2s;
-  font-family:'Satoshi','Segoe UI',sans-serif; font-weight:600;
+  cursor:pointer; font-size:13px;
+  transition:transform 150ms, box-shadow 150ms, border-color 150ms, color 150ms;
+  font-family:'Cabinet Grotesk','Satoshi','Segoe UI',sans-serif; font-weight:700;
+  box-shadow: 3px 3px 0 #000;
 }
-.btn-back-role:hover { border-color:#ffe17c; color:#ffe17c; }
+.btn-back-role:hover { border-color:#ffe17c; color:#ffe17c; transform:translate(3px,3px); box-shadow:none; }
 
 /* Light mode login page specific */
 [data-theme="light"] .login-page {
@@ -1537,20 +1557,22 @@ body::before {
 }
 .btn-employee-login {
   margin-top: 12px;
-  background: rgba(99,102,241,0.1);
-  color: var(--tertiary);
-  border: 1px solid rgba(99,102,241,0.3);
+  background: rgba(255,225,124,0.08);
+  color: #ffe17c;
+  border: 2px solid #ffe17c;
   padding: 12px 24px;
-  border-radius: 12px;
-  font-weight: 700;
+  border-radius: 4px;
+  font-weight: 800;
   font-size: 14px;
+  font-family: 'Cabinet Grotesk','Satoshi','Segoe UI',sans-serif;
   cursor: pointer;
-  transition: all .2s;
+  transition: transform 150ms, box-shadow 150ms;
   width: 100%;
+  box-shadow: 4px 4px 0 #000;
 }
 .btn-employee-login:hover {
-  background: rgba(99,102,241,0.18);
-  transform: translateY(-1px);
+  transform: translate(4px, 4px);
+  box-shadow: none;
 }
 
 .employee-login-section {
@@ -3178,14 +3200,13 @@ body::before {
 
 /* ========== ANALYTICS SECTIONS (Machine & Employee) ========== */
 .analytics-section-title {
-  font-family: 'Anton','Segoe UI',sans-serif;
-  font-size: 20px; font-weight: 400;
-  color: #ffe17c; letter-spacing: 1px;
+  font-family: 'Cabinet Grotesk', 'Anton','Segoe UI',sans-serif;
+  font-size: 20px; font-weight: 800;
+  color: #ffe17c; letter-spacing: -0.3px;
   text-transform: uppercase;
   margin: 32px 0 16px;
-  padding-left: 4px;
-  border-left: 4px solid #ffe17c;
   padding-left: 12px;
+  border-left: 4px solid #ffe17c;
 }
 [data-theme="light"] .analytics-section-title { color: #d4aa10; border-color: #d4aa10; }
 

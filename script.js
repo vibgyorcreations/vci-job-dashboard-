@@ -1462,41 +1462,47 @@ function renderEmployeeAnalytics(){
   const employees = appData.employees || [];
   const tasks = appData.tasks || [];
 
+  // Build stats for ALL employees (including 0-task ones)
   const empStats = employees.map(emp => {
     const empTasks = tasks.filter(t => t.assignedTo === emp.id || t.employeeId === emp.id);
-    const completed = empTasks.filter(t => t.status === 'completed').length;
-    const inProgress = empTasks.filter(t => t.status === 'in-progress').length;
-    const pending = empTasks.filter(t => t.status === 'pending' || !t.status).length;
+    const completed = empTasks.filter(t => (t.status||'').toLowerCase() === 'completed').length;
+    const inProgress = empTasks.filter(t => (t.status||'').toLowerCase() === 'in-progress' || (t.status||'').toLowerCase() === 'inprogress').length;
+    const pending = empTasks.filter(t => {
+      const s = (t.status||'').toLowerCase();
+      return s === 'pending' || s === '' || (s !== 'completed' && s !== 'in-progress' && s !== 'inprogress');
+    }).length;
     return { name:emp.name, dept:emp.department||'-', total:empTasks.length, completed, inProgress, pending };
-  }).filter(e => e.total > 0).sort((a,b)=>b.completed-a.completed);
+  }).sort((a,b)=>b.completed-a.completed || b.total-a.total);
 
-  // Bar chart
+  // Bar chart - show all employees, grey if no tasks
   if(empChart){
-    if(!empStats.length){
-      empChart.innerHTML = '<div class="no-data-msg">No task data for employees yet.</div>';
+    if(!employees.length){
+      empChart.innerHTML = '<div class="no-data-msg">No employees found. Add employees in the Employees section.</div>';
     } else {
       const maxC = Math.max(1,...empStats.map(e=>e.completed));
       empChart.innerHTML = empStats.map((e,i) => {
         const colors = ['#10b981','#3b82f6','#ffe17c','#8b5cf6','#f59e0b'];
-        const c = colors[i % colors.length];
+        const c = e.completed > 0 ? colors[i % colors.length] : 'rgba(183,198,194,0.25)';
+        const w = e.completed > 0 ? (e.completed/maxC*100).toFixed(0) : 2;
         return `<div class="bar-row">
           <div class="bar-label" style="min-width:130px;font-weight:700">${escHtml(e.name)}</div>
-          <div class="bar-track"><div class="bar-fill" style="width:${(e.completed/maxC*100).toFixed(0)}%;background:${c};box-shadow:0 2px 8px ${c}44">
-            <span class="bar-val">${e.completed} done</span>
+          <div class="bar-track"><div class="bar-fill" style="width:${w}%;background:${c};box-shadow:${e.completed?'0 2px 8px '+c+'44':'none'}">
+            <span class="bar-val">${e.completed} done${e.total ? ' / '+e.total+' total' : ''}</span>
           </div></div>
         </div>`;
       }).join('');
     }
   }
 
-  // Table
+  // Table - show all employees
   if(empBody){
-    if(!empStats.length){
-      empBody.innerHTML = '<tr><td colspan="7" class="no-data">No employee task data yet.</td></tr>';
+    if(!employees.length){
+      empBody.innerHTML = '<tr><td colspan="7" class="no-data">No employees found.</td></tr>';
     } else {
       empBody.innerHTML = empStats.map(e => {
         const rate = e.total ? Math.round(e.completed/e.total*100) : 0;
         const rateColor = rate>=80?'#10b981':rate>=50?'#f59e0b':'#ef4444';
+        const rateDisplay = e.total ? `<span style="color:${rateColor};font-weight:800">${rate}%</span>` : '<span style="color:var(--text-muted)">—</span>';
         return `<tr>
           <td style="font-weight:700">${escHtml(e.name)}</td>
           <td>${escHtml(getDepartmentName(e.dept))}</td>
@@ -1504,7 +1510,7 @@ function renderEmployeeAnalytics(){
           <td style="color:#10b981;font-weight:700">${e.completed}</td>
           <td style="color:#3b82f6;font-weight:700">${e.inProgress}</td>
           <td style="color:#f59e0b;font-weight:700">${e.pending}</td>
-          <td><span style="color:${rateColor};font-weight:800">${rate}%</span></td>
+          <td>${rateDisplay}</td>
         </tr>`;
       }).join('');
     }
