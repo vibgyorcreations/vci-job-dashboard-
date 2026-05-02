@@ -1356,14 +1356,17 @@ function renderAnalytics(){
   // Admin-only: Machine & Employee analytics
   const machineSection = document.getElementById('machineAnalyticsSection');
   const empSection     = document.getElementById('employeeAnalyticsSection');
+  const adminBtns      = document.getElementById('analyticsAdminButtons');
   if(currentRole === 'admin'){
     if(machineSection) machineSection.classList.remove('hidden');
     if(empSection)     empSection.classList.remove('hidden');
+    if(adminBtns)      adminBtns.style.display = 'flex';
     renderMachineAnalytics();
     renderEmployeeAnalytics();
   } else {
     if(machineSection) machineSection.classList.add('hidden');
     if(empSection)     empSection.classList.add('hidden');
+    if(adminBtns)      adminBtns.style.display = 'none';
   }
 }
 
@@ -1517,6 +1520,155 @@ function renderEmployeeAnalytics(){
       }).join('');
     }
   }
+}
+
+// ========== EMPLOYEE ANALYTICS MODAL ==========
+function openEmpAnalyticsModal(preSelectId){
+  const modal = document.getElementById('empAnalyticsModal');
+  if(!modal) return;
+  // Populate selector
+  const sel = document.getElementById('empAnalyticsSelect');
+  sel.innerHTML = '<option value="">— All Employees —</option>' +
+    (appData.employees||[]).map(e => `<option value="${e.id}">${escHtml(e.name)}</option>`).join('');
+  if(preSelectId) sel.value = preSelectId;
+  modal.style.display = 'flex';
+  renderEmpAnalyticsModal();
+}
+function closeAnalyticsModal(id){
+  const el = document.getElementById(id);
+  if(el) el.style.display = 'none';
+}
+function renderEmpAnalyticsModal(){
+  const selId = document.getElementById('empAnalyticsSelect').value;
+  const body = document.getElementById('empAnalyticsModalBody');
+  if(!body) return;
+  const tasks = appData.tasks || [];
+  const employees = appData.employees || [];
+
+  const targetEmps = selId ? employees.filter(e => e.id === selId) : employees;
+
+  if(!targetEmps.length){
+    body.innerHTML = '<div class="no-data-msg">No employees found.</div>'; return;
+  }
+
+  const stats = targetEmps.map(emp => {
+    const empTasks = tasks.filter(t => t.assignedTo === emp.id || t.employeeId === emp.id);
+    const completed = empTasks.filter(isTaskCompleted).length;
+    const inProgress = empTasks.filter(isTaskInProgress).length;
+    const pending = empTasks.filter(isTaskPending).length;
+    const total = empTasks.length;
+    const rate = total ? Math.round(completed/total*100) : 0;
+    return { emp, total, completed, inProgress, pending, rate };
+  }).sort((a,b)=>b.completed-a.completed||b.total-a.total);
+
+  const maxC = Math.max(1,...stats.map(s=>s.completed));
+
+  // Bar chart
+  const barRows = stats.map((s,i)=>{
+    const colors = ['#ffe17c','#10b981','#3b82f6','#8b5cf6','#f59e0b'];
+    const c = s.completed>0?colors[i%colors.length]:'rgba(183,198,194,0.2)';
+    const w = s.completed>0?(s.completed/maxC*100).toFixed(0):2;
+    return `<div class="bar-row">
+      <div class="bar-label" style="min-width:140px">${escHtml(s.emp.name)}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${w}%;background:${c}">
+        <span class="bar-val">${s.completed}</span>
+      </div></div>
+    </div>`;
+  }).join('');
+
+  // Table rows
+  const tableRows = stats.map(s=>{
+    const rc = s.rate>=80?'#10b981':s.rate>=50?'#f59e0b':'#ef4444';
+    const rd = s.total?`<span style="color:${rc};font-weight:800">${s.rate}%</span>`:'<span style="color:#6b7280">—</span>';
+    return `<tr>
+      <td style="font-weight:700">${escHtml(s.emp.name)}</td>
+      <td>${escHtml(getDepartmentName(s.emp.department||'-'))}</td>
+      <td>${s.total}</td>
+      <td style="color:#10b981;font-weight:700">${s.completed}</td>
+      <td style="color:#3b82f6;font-weight:700">${s.inProgress}</td>
+      <td style="color:#f59e0b;font-weight:700">${s.pending}</td>
+      <td>${rd}</td>
+    </tr>`;
+  }).join('');
+
+  body.innerHTML = `
+    <div class="glass analytics-card" style="margin-bottom:16px">
+      <div class="analytics-title">Tasks Completed per Employee</div>
+      <div class="bar-chart">${barRows}</div>
+    </div>
+    <div class="glass analytics-card">
+      <div class="analytics-title">Performance Summary</div>
+      <div class="table-wrap" style="overflow-x:auto">
+        <table class="data-table">
+          <thead><tr><th>Employee</th><th>Department</th><th>Total</th><th>Completed</th><th>In Progress</th><th>Pending</th><th>Rate</th></tr></thead>
+          <tbody>${tableRows}</tbody>
+        </table>
+      </div>
+    </div>`;
+}
+
+// ========== MACHINE ANALYTICS MODAL ==========
+function openMachineAnalyticsModal(preSelect){
+  const modal = document.getElementById('machineAnalyticsModal');
+  if(!modal) return;
+  const sel = document.getElementById('machineAnalyticsSelect');
+  const machines = appData.machines || [];
+  sel.innerHTML = '<option value="">— All Machines —</option>' +
+    machines.map(m=>`<option value="${escHtml(m.name)}">${escHtml(m.name)}</option>`).join('');
+  if(preSelect) sel.value = preSelect;
+  modal.style.display = 'flex';
+  renderMachineAnalyticsModal();
+}
+function renderMachineAnalyticsModal(){
+  const selName = document.getElementById('machineAnalyticsSelect').value;
+  const body = document.getElementById('machineAnalyticsModalBody');
+  if(!body) return;
+  const allJobs = [...appData.jobs, ...(appData.archive||[])];
+  const machineMap = {};
+  allJobs.forEach(j=>{
+    const m = j.machine||j.printer||'Unknown';
+    if(!machineMap[m]) machineMap[m]={jobs:0,sqft:0};
+    machineMap[m].jobs++;
+    machineMap[m].sqft += parseFloat(j.sqft||j.sqFt||0);
+  });
+  let entries = Object.entries(machineMap)
+    .map(([name,d])=>({name,jobs:d.jobs,sqft:Math.round(d.sqft)}))
+    .sort((a,b)=>b.sqft-a.sqft);
+  if(selName) entries = entries.filter(e=>e.name===selName);
+  if(!entries.length){
+    body.innerHTML='<div class="no-data-msg">No machine data found.</div>'; return;
+  }
+  const maxSq = Math.max(1,...entries.map(e=>e.sqft));
+  const barRows = entries.map((e,i)=>{
+    const colors=['#ffe17c','#10b981','#3b82f6','#8b5cf6','#f59e0b'];
+    const c=colors[i%colors.length];
+    const w=e.sqft>0?(e.sqft/maxSq*100).toFixed(0):2;
+    return `<div class="bar-row">
+      <div class="bar-label" style="min-width:140px">${escHtml(e.name)}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${w}%;background:${c}">
+        <span class="bar-val">${e.sqft} sqft</span>
+      </div></div>
+    </div>`;
+  }).join('');
+  const tableRows = entries.map(e=>`<tr>
+    <td style="font-weight:700">${escHtml(e.name)}</td>
+    <td>${e.jobs}</td>
+    <td>${e.sqft}</td>
+  </tr>`).join('');
+  body.innerHTML=`
+    <div class="glass analytics-card" style="margin-bottom:16px">
+      <div class="analytics-title">Sq.Ft Printed per Machine</div>
+      <div class="bar-chart">${barRows}</div>
+    </div>
+    <div class="glass analytics-card">
+      <div class="analytics-title">Machine Job Summary</div>
+      <div class="table-wrap" style="overflow-x:auto">
+        <table class="data-table">
+          <thead><tr><th>Machine</th><th>Total Jobs</th><th>Sq.Ft Printed</th></tr></thead>
+          <tbody>${tableRows}</tbody>
+        </table>
+      </div>
+    </div>`;
 }
 
 // ========== INVENTORY ==========
@@ -1835,6 +1987,9 @@ async function deleteCategory(idx){
 function renderMachines(){
   const grid = document.getElementById('machinesGrid');
   if(!grid) return;
+  // Show machine analytics button for admin
+  const machBtn = document.getElementById('machineAnalyticsBtnHeader');
+  if(machBtn) machBtn.style.display = currentRole==='admin' ? 'flex' : 'none';
   if(!appData.machines.length){ grid.innerHTML='<div style="color:var(--text-muted);padding:40px;text-align:center">No machines added yet. Click ✚ Add Machine to get started.</div>'; return; }
   grid.innerHTML = appData.machines.map(m => {
     const pct = m.capacity ? Math.min(100,(m.totalSqft||0)/m.capacity*100) : 0;
@@ -1855,6 +2010,7 @@ function renderMachines(){
       ${m.notes ? `<div class="machine-notes">${escHtml(m.notes)}</div>` : ''}
       <div class="machine-capacity-bar" title="${pct.toFixed(0)}% utilisation"><div class="machine-capacity-fill" style="width:${pct.toFixed(0)}%"></div></div>
       <div class="machine-actions">
+        ${currentRole==='admin' ? `<button class="emp-analytics-link" onclick="openMachineAnalyticsModal('${escHtml(m.name)}')">📊 Analytics</button>` : ''}
         <button class="btn-secondary" style="flex:1;padding:6px 10px;font-size:12px" onclick="openEditMachine('${escHtml(m.id)}')">✏️ Edit</button>
         <button class="btn-icon" onclick="deleteMachine('${escHtml(m.id)}')" style="color:var(--danger)" title="Delete machine">🗑️</button>
       </div>
@@ -2388,6 +2544,9 @@ function renderEmployees(){
     const pendingTasks = appData.tasks.filter(t => t.assignedTo === emp.id && t.status !== 'completed').length;
     const completedTasks = appData.tasks.filter(t => t.assignedTo === emp.id && t.status === 'completed').length;
     const unreadNotifs = (emp.notifications || []).filter(n => !n.read).length;
+    const analyticsBtn = currentRole === 'admin'
+      ? `<button class="emp-analytics-link" onclick="openEmpAnalyticsModal('${emp.id}')">📊 Analytics</button>`
+      : '';
     
     return `
     <div class="employee-card ${emp.status === 'inactive' ? 'inactive' : ''}">
@@ -2410,6 +2569,7 @@ function renderEmployees(){
         <div class="employee-pin-info">🔐 PIN: ${emp.pin ? '****' : 'Not set'}</div>
       </div>
       <div class="employee-card-actions">
+        ${analyticsBtn}
         <button class="btn-secondary emp-action-btn" onclick="editEmployee('${emp.id}')"><span class="btn-icon-wrapper">✏️</span><span class="btn-text">Edit</span></button>
         <button class="btn-secondary emp-action-btn btn-danger-icon" onclick="deleteEmployee('${emp.id}')"><span class="btn-icon-wrapper">🗑️</span></button>
       </div>

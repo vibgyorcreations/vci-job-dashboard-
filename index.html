@@ -327,7 +327,13 @@
 
     <!-- ANALYTICS VIEW -->
     <div id="viewAnalytics" class="view hidden">
-      <div class="view-header"><h2 class="view-title">📈 Analytics</h2></div>
+      <div class="view-header">
+        <h2 class="view-title">📈 Analytics</h2>
+        <div class="view-actions" id="analyticsAdminButtons" style="display:none;">
+          <button class="btn-analytics-trigger" onclick="openEmpAnalyticsModal()">👤 Employee Analytics</button>
+          <button class="btn-analytics-trigger" onclick="openMachineAnalyticsModal()">⚙️ Machine Analytics</button>
+        </div>
+      </div>
       <div class="analytics-grid">
         <div class="glass analytics-card"><h3 class="analytics-title">Jobs by Status</h3><div class="bar-chart" id="statusChart"></div></div>
         <div class="glass analytics-card"><h3 class="analytics-title">Priority Distribution</h3><div class="bar-chart" id="priorityChart"></div></div>
@@ -421,7 +427,10 @@
     <div id="viewMachines" class="view hidden">
       <div class="view-header">
         <h2 class="view-title">⚙️ Machines</h2>
-        <div class="view-actions"><button class="btn-primary" onclick="openAddMachineModal()">&#10010; Add Machine</button></div>
+        <div class="view-actions">
+          <button class="btn-analytics-trigger" id="machineAnalyticsBtnHeader" style="display:none" onclick="openMachineAnalyticsModal()">📊 Machine Analytics</button>
+          <button class="btn-primary" onclick="openAddMachineModal()">&#10010; Add Machine</button>
+        </div>
       </div>
       <div class="machines-grid" id="machinesGrid"></div>
     </div>
@@ -1095,6 +1104,44 @@
       <div class="modal-footer">
         <button class="btn-secondary" onclick="closeModal('taskDetailsModal')">Close</button>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- Employee Analytics Modal (Admin) -->
+<div id="empAnalyticsModal" class="analytics-modal-overlay" style="display:none;" onclick="if(event.target===this)closeAnalyticsModal('empAnalyticsModal')">
+  <div class="analytics-modal-panel">
+    <div class="analytics-modal-header">
+      <div class="analytics-modal-title">👤 Employee Analytics</div>
+      <button class="analytics-modal-close" onclick="closeAnalyticsModal('empAnalyticsModal')">✕</button>
+    </div>
+    <div class="analytics-modal-selector">
+      <label>Select Employee</label>
+      <select id="empAnalyticsSelect" onchange="renderEmpAnalyticsModal()">
+        <option value="">— All Employees —</option>
+      </select>
+    </div>
+    <div class="analytics-modal-body" id="empAnalyticsModalBody">
+      <!-- populated by JS -->
+    </div>
+  </div>
+</div>
+
+<!-- Machine Analytics Modal (Admin) -->
+<div id="machineAnalyticsModal" class="analytics-modal-overlay" style="display:none;" onclick="if(event.target===this)closeAnalyticsModal('machineAnalyticsModal')">
+  <div class="analytics-modal-panel">
+    <div class="analytics-modal-header">
+      <div class="analytics-modal-title">⚙️ Machine Analytics</div>
+      <button class="analytics-modal-close" onclick="closeAnalyticsModal('machineAnalyticsModal')">✕</button>
+    </div>
+    <div class="analytics-modal-selector">
+      <label>Select Machine</label>
+      <select id="machineAnalyticsSelect" onchange="renderMachineAnalyticsModal()">
+        <option value="">— All Machines —</option>
+      </select>
+    </div>
+    <div class="analytics-modal-body" id="machineAnalyticsModalBody">
+      <!-- populated by JS -->
     </div>
   </div>
 </div>
