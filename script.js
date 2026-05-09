@@ -13,7 +13,7 @@ let appData = {
   notifications: [],
   employees: [],
   tasks: [],
-  settings: { companyName:'FactoryFlow OS', companyLogo:'https://github.com/user-attachments/assets/2e406cd7-d7b6-412d-8973-22e4b814e701', driveFolderId:'', theme:'dark', accentColor:'#3b82f6' },
+  settings: { companyName:'FactoryFlow OS', companyLogo:'assets/app-icon.svg', driveFolderId:'', theme:'dark', accentColor:'#3b82f6' },
   pins: { admin:'1234', waiting:'1111', printing:'2222', assembly:'3333', dispatch:'4444' }
 };
 
