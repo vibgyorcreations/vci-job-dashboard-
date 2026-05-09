@@ -21,6 +21,7 @@
   --header-h: 60px;
   --neu-shadow: 4px 4px 0 #000;
   --neu-shadow-sm: 3px 3px 0 #000;
+  --company-name-max-width: 320px;
 }
 
 
@@ -171,7 +172,7 @@ body::before {
   text-transform: uppercase; letter-spacing: -0.2px;
   white-space: normal;
   word-break: break-word;
-  max-width: 150px;
+  max-width: var(--company-name-max-width);
 }
 
 .sidebar-nav { flex:1; padding:16px 10px; display:flex; flex-direction:column; gap:4px; }
@@ -1006,6 +1007,9 @@ body::before {
   text-transform: uppercase; line-height:1.1;
   white-space: normal;
   word-break: break-word;
+  max-width: var(--company-name-max-width);
+  margin-left: auto;
+  margin-right: auto;
 }
 .login-subtitle {
   font-family: 'Satoshi','Segoe UI',sans-serif;
@@ -2213,7 +2217,7 @@ body::before {
   font-weight: 700;
   color: var(--text);
   letter-spacing: -0.2px;
-  max-width: 320px;
+  max-width: var(--company-name-max-width);
   white-space: normal;
   word-break: break-word;
   line-height: 1.1;
