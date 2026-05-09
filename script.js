@@ -13,7 +13,7 @@ let appData = {
   notifications: [],
   employees: [],
   tasks: [],
-  settings: { companyName:'FactoryFlow OS', companyLogo:'', driveFolderId:'', theme:'dark', accentColor:'#3b82f6' },
+  settings: { companyName:'FactoryFlow OS', companyLogo:'https://github.com/user-attachments/assets/2e406cd7-d7b6-412d-8973-22e4b814e701', driveFolderId:'', theme:'dark', accentColor:'#3b82f6' },
   pins: { admin:'1234', waiting:'1111', printing:'2222', assembly:'3333', dispatch:'4444' }
 };
 
@@ -274,7 +274,7 @@ function showApp(){
   requestNotificationPermission();
 }
 function setRoleIcon(){
-  const icons = {admin:'⚜️',waiting:'📋',printing:'🖨️',assembly:'🔧',dispatch:'📦'};
+  const icons = {admin:'💻',waiting:'📋',printing:'🖨️',assembly:'🔧',dispatch:'📦'};
   const el = document.getElementById('sessionRoleIcon');
   if(el) el.textContent = icons[currentRole] || '👤';
 }
@@ -282,7 +282,7 @@ function selectRole(role){
   pendingRole = role;
   pinBuffer = '';
   updatePinDots();
-  const icons = {admin:'⚜️',waiting:'📋',printing:'🖨️',assembly:'🔧',dispatch:'📦'};
+  const icons = {admin:'💻',waiting:'📋',printing:'🖨️',assembly:'🔧',dispatch:'📦'};
   const names = {admin:'Admin',waiting:'Waiting',printing:'Printing',assembly:'Assembly',dispatch:'Dispatch'};
   document.getElementById('pinRoleLabel').textContent = (icons[role]||'') + ' ' + (names[role]||role) + ' — Enter PIN';
   document.getElementById('roleSelect').classList.add('hidden');
@@ -1388,7 +1388,7 @@ function renderMachineAnalytics(){
     const m = j.machine || '';
     if(!m) return;
     if(!machineMap[m]) machineMap[m] = { name:m, sqft:0, jobs:0 };
-    machineMap[m].sqft += parseFloat(j.sqft||j.size||0)||0;
+    machineMap[m].sqft += parseFloat(j.sqft||j.size||j.sqFt||0)||0;
     machineMap[m].jobs++;
   });
   const machineList = Object.values(machineMap).sort((a,b)=>b.sqft-a.sqft);
@@ -1426,7 +1426,7 @@ function renderMachineAnalytics(){
       const ds = ((j.archivedAt||j.updatedAt||j.createdAt||'')).split('T')[0];
       if(!days14.includes(ds)) return;
       if(!machineDays[j.machine]) machineDays[j.machine] = {};
-      machineDays[j.machine][ds] = (machineDays[j.machine][ds]||0) + (parseFloat(j.sqft||j.size||0)||0);
+      machineDays[j.machine][ds] = (machineDays[j.machine][ds]||0) + (parseFloat(j.sqft||j.size||j.sqFt||0)||0);
     });
     const mNames = Object.keys(machineDays).filter(n=>machineList.find(m=>m.name===n));
     if(!mNames.length){
@@ -1456,7 +1456,7 @@ function renderMachineAnalytics(){
       const key = j.machine+'__'+ds;
       if(!machineDaysAgg[key]) machineDaysAgg[key] = { machine:j.machine, date:ds, jobs:0, sqft:0 };
       machineDaysAgg[key].jobs++;
-      machineDaysAgg[key].sqft += parseFloat(j.sqft||j.size||0)||0;
+      machineDaysAgg[key].sqft += parseFloat(j.sqft||j.size||j.sqFt||0)||0;
     });
     Object.values(machineDaysAgg).sort((a,b)=>b.date.localeCompare(a.date)||b.sqft-a.sqft).slice(0,50).forEach(r => {
       rows.push(`<tr><td>${escHtml(r.machine)}</td><td>${r.date}</td><td>${r.jobs}</td><td>${r.sqft.toFixed(2)}</td></tr>`);
@@ -1636,7 +1636,7 @@ function renderMachineAnalyticsModal(){
     const m = j.machine||j.printer||'Unknown';
     if(!machineMap[m]) machineMap[m]={jobs:0,sqft:0};
     machineMap[m].jobs++;
-    machineMap[m].sqft += parseFloat(j.sqft||j.sqFt||0);
+    machineMap[m].sqft += parseFloat(j.sqft||j.size||j.sqFt||0)||0;
   });
   let entries = Object.entries(machineMap)
     .map(([name,d])=>({name,jobs:d.jobs,sqft:Math.round(d.sqft)}))
@@ -1657,6 +1657,20 @@ function renderMachineAnalyticsModal(){
       </div></div>
     </div>`;
   }).join('');
+  const dailyAgg = {};
+  allJobs.forEach(j => {
+    const m = j.machine||j.printer||'Unknown';
+    if(selName && m !== selName) return;
+    const ds = ((j.archivedAt||j.updatedAt||j.createdAt||'')).split('T')[0];
+    if(!ds) return;
+    const key = `${m}__${ds}`;
+    if(!dailyAgg[key]) dailyAgg[key] = { machine:m, date:ds, sqft:0 };
+    dailyAgg[key].sqft += parseFloat(j.sqft||j.size||j.sqFt||0)||0;
+  });
+  const dailyRows = Object.values(dailyAgg).sort((a,b)=>b.date.localeCompare(a.date)||b.sqft-a.sqft);
+  const dailyTable = dailyRows.length
+    ? dailyRows.map(r => `<tr><td>${escHtml(r.machine)}</td><td>${r.date}</td><td>${r.sqft.toFixed(1)}</td></tr>`).join('')
+    : '<tr><td colspan="3" class="no-data">No daily machine data found.</td></tr>';
   const tableRows = entries.map(e=>`<tr>
     <td style="font-weight:700">${escHtml(e.name)}</td>
     <td>${e.jobs}</td>
@@ -1666,6 +1680,15 @@ function renderMachineAnalyticsModal(){
     <div class="glass analytics-card" style="margin-bottom:16px">
       <div class="analytics-title">Sq.Ft Printed per Machine</div>
       <div class="bar-chart">${barRows}</div>
+    </div>
+    <div class="glass analytics-card" style="margin-bottom:16px">
+      <div class="analytics-title">Daily Sq.Ft Printed</div>
+      <div class="table-wrap" style="overflow-x:auto">
+        <table class="data-table">
+          <thead><tr><th>Machine</th><th>Date</th><th>Sq.Ft Printed</th></tr></thead>
+          <tbody>${dailyTable}</tbody>
+        </table>
+      </div>
     </div>
     <div class="glass analytics-card">
       <div class="analytics-title">Machine Job Summary</div>

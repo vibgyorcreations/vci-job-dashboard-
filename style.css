@@ -166,9 +166,12 @@ body::before {
 .sidebar-logo-img { font-size:28px; flex-shrink:0; }
 .sidebar-logo-img img { width:32px; height:32px; border-radius:4px; object-fit:contain; }
 .sidebar-name {
-  font-weight:800; font-size:14px; color:#ffe17c; line-height:1.2; white-space:nowrap;
+  font-weight:800; font-size:14px; color:#ffe17c; line-height:1.1;
   font-family: 'Cabinet Grotesk', 'Satoshi', 'Segoe UI', sans-serif;
   text-transform: uppercase; letter-spacing: -0.2px;
+  white-space: normal;
+  word-break: break-word;
+  max-width: 150px;
 }
 
 .sidebar-nav { flex:1; padding:16px 10px; display:flex; flex-direction:column; gap:4px; }
@@ -1000,7 +1003,9 @@ body::before {
   font-family: 'Cabinet Grotesk', 'Satoshi', 'Segoe UI', sans-serif;
   font-size:32px; font-weight:800; color:#ffe17c;
   margin-bottom:4px; letter-spacing:-0.5px;
-  text-transform: uppercase; line-height:1;
+  text-transform: uppercase; line-height:1.1;
+  white-space: normal;
+  word-break: break-word;
 }
 .login-subtitle {
   font-family: 'Satoshi','Segoe UI',sans-serif;
@@ -2208,6 +2213,10 @@ body::before {
   font-weight: 700;
   color: var(--text);
   letter-spacing: -0.2px;
+  max-width: 320px;
+  white-space: normal;
+  word-break: break-word;
+  line-height: 1.1;
 }
 
 .emp-full-user {
@@ -3311,7 +3320,7 @@ body::before {
 
 /* ========== ANALYTICS SECTIONS (Machine & Employee) ========== */
 .analytics-section-title {
-  font-family: 'Cabinet Grotesk', 'Anton','Segoe UI',sans-serif;
+  font-family: 'Cabinet Grotesk', 'Satoshi', 'Segoe UI', sans-serif;
   font-size: 20px; font-weight: 800;
   color: #ffe17c; letter-spacing: -0.3px;
   text-transform: uppercase;
@@ -3354,7 +3363,7 @@ body::before {
 }
 
 /* ========== SYNC LOADER BODY FONT ========== */
-body {
+.sync-loader-overlay {
   font-family: 'Satoshi', 'Segoe UI', system-ui, -apple-system, sans-serif;
 }
 
@@ -3384,7 +3393,7 @@ body {
   gap: 12px;
 }
 .analytics-modal-title {
-  font-family: 'Cabinet Grotesk', 'Anton', sans-serif;
+  font-family: 'Cabinet Grotesk', 'Satoshi', sans-serif;
   font-size: 20px; font-weight: 800;
   color: #ffe17c;
   text-transform: uppercase; letter-spacing: -0.3px;
