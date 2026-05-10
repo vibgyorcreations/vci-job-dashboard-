@@ -1022,7 +1022,15 @@ async function saveJob(){
   renderDashboard(); // Render immediately for faster UI
   updateKPIs();
   showToast(isEdit ? '✅ Job updated' : '✅ Job created: '+job.id, 'success');
-  if(!isEdit) addNotification('🆕 New job created: '+job.id+' — '+job.name+' (by '+currentRole+')', job.id);
+  if(!isEdit){
+    addNotification('🆕 New job created: '+job.id+' — '+job.name+' (by '+currentRole+')', job.id);
+    addAllEmployeesNotification({
+      type: 'job_created',
+      message: `🆕 New job created: ${job.id} — ${job.name}`,
+      jobId: job.id,
+      timestamp: new Date().toISOString()
+    });
+  }
   try{
     await Cloud.pushData(isEdit?'updateJob':'createJob', job);
   } catch(e){}
@@ -1305,9 +1313,31 @@ function printArchive(){
 }
 
 // ========== ANALYTICS ==========
+function getRecordTimestamp(record, fields){
+  for(const field of fields){
+    const val = record && record[field];
+    if(val){
+      const ts = new Date(val).getTime();
+      if(!Number.isNaN(ts)) return ts;
+    }
+  }
+  return 0;
+}
+function getRecordDateKey(record, fields){
+  const ts = getRecordTimestamp(record, fields);
+  return ts ? new Date(ts).toISOString().split('T')[0] : '';
+}
+function isRecordWithinDays(record, fields, days){
+  const ts = getRecordTimestamp(record, fields);
+  if(!ts) return false;
+  return ts >= (Date.now() - days * 86400000);
+}
 function renderAnalytics(){
   const jobs = appData.jobs;
   const archived = appData.archive;
+  const jobDateFields = ['archivedAt','updatedAt','createdAt'];
+  const daysWindow = 7;
+  const recentArchived = archived.filter(j => isRecordWithinDays(j, jobDateFields, daysWindow));
   // Status chart
   const statuses = [{label:'Waiting',val:jobs.filter(j=>j.status==='waiting').length,color:'var(--col-waiting)'},
     {label:'Printing',val:jobs.filter(j=>j.status==='printing').length,color:'var(--col-printing)'},
@@ -1327,14 +1357,14 @@ function renderAnalytics(){
   if(pc) pc.innerHTML = pris.map(p =>
     `<div class="bar-row"><div class="bar-label">${p.label}</div><div class="bar-track"><div class="bar-fill" style="width:${(p.val/maxP*100).toFixed(0)}%;background:${p.color}"><span class="bar-val">${p.val}</span></div></div></div>`
   ).join('');
-  // Heatmap (last 14 days of archive)
+  // Heatmap (last 7 days of archive)
   const hm = document.getElementById('throughputHeatmap');
   if(hm){
     const days = [];
-    for(let i=13;i>=0;i--){
+    for(let i=daysWindow-1;i>=0;i--){
       const d = new Date(Date.now()-i*86400000);
       const ds = d.toISOString().split('T')[0];
-      const count = archived.filter(j => (j.archivedAt||'').startsWith(ds)).length;
+      const count = recentArchived.filter(j => getRecordDateKey(j, jobDateFields) === ds).length;
       days.push({ds, day:d.toLocaleDateString('en',{weekday:'short'}), count});
     }
     const maxC = Math.max(1,...days.map(d=>d.count));
@@ -1347,12 +1377,12 @@ function renderAnalytics(){
   // Stats
   const ts = document.getElementById('throughputStats');
   if(ts){
-    const total = archived.length;
-    const avgPerDay = total ? (total/30).toFixed(1) : 0;
-    const totalSqft = archived.reduce((s,j)=>s+(parseFloat(j.sqft||j.size||0)||0),0);
+    const total = recentArchived.length;
+    const avgPerDay = total ? (total/daysWindow).toFixed(1) : 0;
+    const totalSqft = recentArchived.reduce((s,j)=>s+(parseFloat(j.sqft||j.size||0)||0),0);
     ts.innerHTML = [
-      {label:'Total Archived', val:total},
-      {label:'Avg Jobs/Day (30d)', val:avgPerDay},
+      {label:'Archived (7d)', val:total},
+      {label:'Avg Jobs/Day (7d)', val:avgPerDay},
       {label:'Total Sq.Ft Produced', val:totalSqft.toFixed(0)},
       {label:'Active Jobs', val:appData.jobs.length},
       {label:'Total Materials', val:appData.materials.length},
@@ -1379,17 +1409,33 @@ function renderAnalytics(){
 
 // ========== MACHINE ANALYTICS ==========
 function renderMachineAnalytics(){
+  const jobDateFields = ['archivedAt','updatedAt','createdAt'];
+  const daysWindow = 7;
   const allJobs = [...appData.jobs, ...(appData.archive||[])];
+  const recentJobs = allJobs.filter(j => isRecordWithinDays(j, jobDateFields, daysWindow));
+  const machineNameById = new Map((appData.machines||[]).map(m => [m.id, m.name]));
 
   // --- Top machines by total sqft ---
   const machineMap = {};
   appData.machines.forEach(m => { machineMap[m.name] = { name:m.name, sqft:0, jobs:0 }; });
-  allJobs.forEach(j => {
+  const addMachineStats = (name, sqft) => {
+    if(!name) return;
+    if(!machineMap[name]) machineMap[name] = { name, sqft:0, jobs:0 };
+    machineMap[name].sqft += sqft;
+    machineMap[name].jobs++;
+  };
+  recentJobs.forEach(j => {
+    if(Array.isArray(j.machines) && j.machines.length){
+      j.machines.forEach(assign => {
+        const name = machineNameById.get(assign.machineId) || assign.machineId || '';
+        const sqft = parseFloat(assign.sqft||0) || parseFloat(j.sqft||j.size||j.sqFt||0)||0;
+        addMachineStats(name, sqft);
+      });
+      return;
+    }
     const m = j.machine || '';
     if(!m) return;
-    if(!machineMap[m]) machineMap[m] = { name:m, sqft:0, jobs:0 };
-    machineMap[m].sqft += parseFloat(j.sqft||j.size||j.sqFt||0)||0;
-    machineMap[m].jobs++;
+    addMachineStats(m, parseFloat(j.sqft||j.size||j.sqFt||0)||0);
   });
   const machineList = Object.values(machineMap).sort((a,b)=>b.sqft-a.sqft);
   const maxSqft = Math.max(1, ...machineList.map(m=>m.sqft));
@@ -1411,22 +1457,34 @@ function renderMachineAnalytics(){
     }
   }
 
-  // --- Daily sqft per machine (last 14 days) ---
+  // --- Daily sqft per machine (last 7 days) ---
   const dailyChart = document.getElementById('machineDailyChart');
   if(dailyChart){
-    const days14 = [];
-    for(let i=13;i>=0;i--){
+    const daysWindowKeys = [];
+    for(let i=daysWindow-1;i>=0;i--){
       const d = new Date(Date.now()-i*86400000);
-      days14.push(d.toISOString().split('T')[0]);
+      daysWindowKeys.push(d.toISOString().split('T')[0]);
     }
     const machineDays = {};
     machineList.forEach(m => { machineDays[m.name] = {}; });
-    allJobs.forEach(j => {
+    const addMachineDaily = (name, ds, sqft) => {
+      if(!name) return;
+      if(!machineDays[name]) machineDays[name] = {};
+      machineDays[name][ds] = (machineDays[name][ds]||0) + sqft;
+    };
+    recentJobs.forEach(j => {
+      const ds = getRecordDateKey(j, jobDateFields);
+      if(!ds || !daysWindowKeys.includes(ds)) return;
+      if(Array.isArray(j.machines) && j.machines.length){
+        j.machines.forEach(assign => {
+          const name = machineNameById.get(assign.machineId) || assign.machineId || '';
+          const sqft = parseFloat(assign.sqft||0) || parseFloat(j.sqft||j.size||j.sqFt||0)||0;
+          addMachineDaily(name, ds, sqft);
+        });
+        return;
+      }
       if(!j.machine) return;
-      const ds = ((j.archivedAt||j.updatedAt||j.createdAt||'')).split('T')[0];
-      if(!days14.includes(ds)) return;
-      if(!machineDays[j.machine]) machineDays[j.machine] = {};
-      machineDays[j.machine][ds] = (machineDays[j.machine][ds]||0) + (parseFloat(j.sqft||j.size||j.sqFt||0)||0);
+      addMachineDaily(j.machine, ds, parseFloat(j.sqft||j.size||j.sqFt||0)||0);
     });
     const mNames = Object.keys(machineDays).filter(n=>machineList.find(m=>m.name===n));
     if(!mNames.length){
@@ -1435,12 +1493,12 @@ function renderMachineAnalytics(){
       const colorsRow = ['#ffe17c','#3b82f6','#10b981','#8b5cf6','#f59e0b'];
       dailyChart.innerHTML = mNames.map((name,idx) => {
         const c = colorsRow[idx % colorsRow.length];
-        const rowVals = days14.map(ds => {
+        const rowVals = daysWindowKeys.map(ds => {
           const v = machineDays[name][ds]||0;
           return `<span class="mday-cell" title="${ds}: ${v.toFixed(1)} sq.ft" style="background:${v?c+'aa':'rgba(255,255,255,0.04)'}; color:${v?'#111':'var(--text-muted)'}; font-size:11px; font-weight:700;">${v?v.toFixed(0):'-'}</span>`;
         }).join('');
         return `<div class="mday-row"><span class="mday-machine">${escHtml(name)}</span><div class="mday-cells">${rowVals}</div></div>`;
-      }).join('') + `<div class="mday-dates">${days14.map(ds=>`<span class="mday-date">${ds.slice(5)}</span>`).join('')}</div>`;
+      }).join('') + `<div class="mday-dates">${daysWindowKeys.map(ds=>`<span class="mday-date">${ds.slice(5)}</span>`).join('')}</div>`;
     }
   }
 
@@ -1449,14 +1507,26 @@ function renderMachineAnalytics(){
   if(histBody){
     const rows = [];
     const machineDaysAgg = {};
-    allJobs.forEach(j => {
-      if(!j.machine) return;
-      const ds = ((j.archivedAt||j.updatedAt||j.createdAt||'')).split('T')[0];
-      if(!ds) return;
-      const key = j.machine+'__'+ds;
-      if(!machineDaysAgg[key]) machineDaysAgg[key] = { machine:j.machine, date:ds, jobs:0, sqft:0 };
+    const addHistoryRow = (name, ds, sqft) => {
+      if(!name || !ds) return;
+      const key = name+'__'+ds;
+      if(!machineDaysAgg[key]) machineDaysAgg[key] = { machine:name, date:ds, jobs:0, sqft:0 };
       machineDaysAgg[key].jobs++;
-      machineDaysAgg[key].sqft += parseFloat(j.sqft||j.size||j.sqFt||0)||0;
+      machineDaysAgg[key].sqft += sqft;
+    };
+    recentJobs.forEach(j => {
+      const ds = getRecordDateKey(j, jobDateFields);
+      if(!ds) return;
+      if(Array.isArray(j.machines) && j.machines.length){
+        j.machines.forEach(assign => {
+          const name = machineNameById.get(assign.machineId) || assign.machineId || '';
+          const sqft = parseFloat(assign.sqft||0) || parseFloat(j.sqft||j.size||j.sqFt||0)||0;
+          addHistoryRow(name, ds, sqft);
+        });
+        return;
+      }
+      if(!j.machine) return;
+      addHistoryRow(j.machine, ds, parseFloat(j.sqft||j.size||j.sqFt||0)||0);
     });
     Object.values(machineDaysAgg).sort((a,b)=>b.date.localeCompare(a.date)||b.sqft-a.sqft).slice(0,50).forEach(r => {
       rows.push(`<tr><td>${escHtml(r.machine)}</td><td>${r.date}</td><td>${r.jobs}</td><td>${r.sqft.toFixed(2)}</td></tr>`);
@@ -1475,7 +1545,8 @@ function renderEmployeeAnalytics(){
   const empChart = document.getElementById('empTasksChart');
   const empBody  = document.getElementById('empPerfBody');
   const employees = appData.employees || [];
-  const tasks = appData.tasks || [];
+  const taskDateFields = ['completedAt','updatedAt','createdAt'];
+  const tasks = (appData.tasks || []).filter(t => isRecordWithinDays(t, taskDateFields, 7));
 
   // Build stats for ALL employees (including 0-task ones)
   const empStats = employees.map(emp => {
@@ -1549,7 +1620,8 @@ function renderEmpAnalyticsModal(){
   const selId = document.getElementById('empAnalyticsSelect').value;
   const body = document.getElementById('empAnalyticsModalBody');
   if(!body) return;
-  const tasks = appData.tasks || [];
+  const taskDateFields = ['completedAt','updatedAt','createdAt'];
+  const tasks = (appData.tasks || []).filter(t => isRecordWithinDays(t, taskDateFields, 7));
   const employees = appData.employees || [];
 
   const targetEmps = selId ? employees.filter(e => e.id === selId) : employees;
@@ -3374,6 +3446,15 @@ function addDepartmentNotification(department, notification){
       // Don't notify the person who triggered the action
       if(currentEmployee && emp.id === currentEmployee.id) return;
       
+      addEmployeeNotification(emp.id, notification);
+    });
+}
+
+function addAllEmployeesNotification(notification){
+  appData.employees
+    .filter(e => e.status === 'active')
+    .forEach(emp => {
+      if(currentEmployee && emp.id === currentEmployee.id) return;
       addEmployeeNotification(emp.id, notification);
     });
 }
