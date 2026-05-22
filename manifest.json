@@ -1,0 +1,35 @@
+{
+  "name": "FactoryFlow OS",
+  "short_name": "FactoryFlow",
+  "description": "Factory Job Management Dashboard - Track jobs through waiting, printing, assembly, and dispatch stages",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#171e19",
+  "theme_color": "#ffe17c",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "assets/app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": [
+    "business",
+    "productivity"
+  ],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "url": "/?view=dashboard",
+      "description": "View job dashboard"
+    },
+    {
+      "name": "Inventory",
+      "url": "/?view=inventory",
+      "description": "Check inventory"
+    }
+  ]
+}
