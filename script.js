@@ -1327,6 +1327,16 @@ function getRecordDateKey(record, fields){
   const ts = getRecordTimestamp(record, fields);
   return ts ? new Date(ts).toISOString().split('T')[0] : '';
 }
+function getUniqueRecordsById(records){
+  const seen = new Set();
+  return (records || []).filter(record => {
+    const id = record && record.id;
+    if(!id) return true;
+    if(seen.has(id)) return false;
+    seen.add(id);
+    return true;
+  });
+}
 function isRecordWithinDays(record, fields, days){
   const ts = getRecordTimestamp(record, fields);
   if(!ts) return false;
@@ -1335,9 +1345,10 @@ function isRecordWithinDays(record, fields, days){
 function renderAnalytics(){
   const jobs = appData.jobs;
   const archived = appData.archive;
-  const jobDateFields = ['archivedAt','updatedAt','createdAt'];
+  const allJobs = getUniqueRecordsById([...(jobs||[]), ...(archived||[])]);
+  const jobDateFields = ['createdAt','archivedAt','updatedAt'];
   const daysWindow = 7;
-  const recentArchived = archived.filter(j => isRecordWithinDays(j, jobDateFields, daysWindow));
+  const recentJobs = allJobs.filter(j => isRecordWithinDays(j, jobDateFields, daysWindow));
   // Status chart
   const statuses = [{label:'Waiting',val:jobs.filter(j=>j.status==='waiting').length,color:'var(--col-waiting)'},
     {label:'Printing',val:jobs.filter(j=>j.status==='printing').length,color:'var(--col-printing)'},
@@ -1357,14 +1368,14 @@ function renderAnalytics(){
   if(pc) pc.innerHTML = pris.map(p =>
     `<div class="bar-row"><div class="bar-label">${p.label}</div><div class="bar-track"><div class="bar-fill" style="width:${(p.val/maxP*100).toFixed(0)}%;background:${p.color}"><span class="bar-val">${p.val}</span></div></div></div>`
   ).join('');
-  // Heatmap (last 7 days of archive)
+  // Heatmap (last 7 days of job activity)
   const hm = document.getElementById('throughputHeatmap');
   if(hm){
     const days = [];
     for(let i=daysWindow-1;i>=0;i--){
       const d = new Date(Date.now()-i*86400000);
       const ds = d.toISOString().split('T')[0];
-      const count = recentArchived.filter(j => getRecordDateKey(j, jobDateFields) === ds).length;
+      const count = recentJobs.filter(j => getRecordDateKey(j, jobDateFields) === ds).length;
       days.push({ds, day:d.toLocaleDateString('en',{weekday:'short'}), count});
     }
     const maxC = Math.max(1,...days.map(d=>d.count));
@@ -1377,13 +1388,13 @@ function renderAnalytics(){
   // Stats
   const ts = document.getElementById('throughputStats');
   if(ts){
-    const total = recentArchived.length;
+    const total = recentJobs.length;
     const avgPerDay = total ? (total/daysWindow).toFixed(1) : 0;
-    const totalSqft = recentArchived.reduce((s,j)=>s+(parseFloat(j.sqft||j.size||0)||0),0);
+    const totalSqft = recentJobs.reduce((s,j)=>s+(parseFloat(j.sqft||j.size||0)||0),0);
     ts.innerHTML = [
-      {label:'Archived (7d)', val:total},
+      {label:'Jobs Created (7d)', val:total},
       {label:'Avg Jobs/Day (7d)', val:avgPerDay},
-      {label:'Total Sq.Ft Produced', val:totalSqft.toFixed(0)},
+      {label:'Sq.Ft Produced (7d)', val:totalSqft.toFixed(0)},
       {label:'Active Jobs', val:appData.jobs.length},
       {label:'Total Materials', val:appData.materials.length},
       {label:'Total Machines', val:appData.machines.length}
